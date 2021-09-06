@@ -1,6 +1,7 @@
-FROM node:16-alpine
+FROM node:16
 WORKDIR /app
-COPY package.json ./
-RUN npm install
+COPY package*.json ./
+RUN npm ci
 RUN npm audit || true
-COPY . .
+COPY styles.css manifest.json watch/
+COPY .* *.* ./

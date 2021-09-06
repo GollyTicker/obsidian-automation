@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import {App, Modal, Notice, Plugin, PluginSettingTab, Setting} from 'obsidian';
 
 interface MyPluginSettings {
 	mySetting: string;
@@ -99,7 +99,7 @@ class SampleSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setDesc('It\'s a super super secret!')
 			.addText(text => text
 				.setPlaceholder('Enter your secret')
 				.setValue('')
