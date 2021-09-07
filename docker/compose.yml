@@ -2,17 +2,16 @@ version: "3.9"
 
 services:
 
-  plugin:
+  plugin-dev:
     build:
-      dockerfile: Dockerfile
-      context: .
+      dockerfile: docker/Dockerfile
+      context: ..
     container_name: plugin-runner
     image: obsidian-automation:v1
     volumes:
-      - ${PWD}/test-vault:/app/test-vault
-      - ${PWD}/watch:/app/watch
+      - ${PWD}:/app
     network_mode: host
-    command: ./plugin-dev-start.sh
+    command: ./docker/docker-command-dev.sh
 #    command: /bin/bash
 #    stdin_open: true # docker run -i
 #    tty: true        # docker run -t
