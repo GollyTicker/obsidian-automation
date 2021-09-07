@@ -7,10 +7,7 @@ build an program an entire plugin to match your imagination? The **Obsidian Auto
 Automate workflows, common actions and create scriptable bots inside automation notes. Automation notes create bots
 which process the notes and Obsidian itself to make changes according to what you want!
 
-### Start
+### Information for Developers
 
-`scripts/start-dev.sh`
-
-### Stop
-
-`scripts/stop-dev.sh`
+* [notes/Developer-Notes.md](notes/Developer-Notes.md)
+* [notes/Generic-Obsigian-Plugin-Help.md](notes/Generic-Obsidian-Plugin-Help.md)
