@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
 
-  plugin-dev:
+  plugin-watchmode-for-dev:
     build:
       dockerfile: docker/Dockerfile
       context: ..
@@ -11,7 +11,22 @@ services:
     volumes:
       - ${PWD}:/app
     network_mode: host
-    command: ./docker/docker-command-dev.sh
-#    command: /bin/bash
-#    stdin_open: true # docker run -i
-#    tty: true        # docker run -t
+    environment:
+      OUTPUT_DIRECTORY: "test-vault/.obsidian/plugins/automation/"
+    command: ./docker/docker-command.sh dev
+  #    command: /bin/bash
+  #    stdin_open: true # docker run -i
+  #    tty: true        # docker run -t
+
+  plugin-build-for-prod:
+    build:
+      dockerfile: docker/Dockerfile
+      context: ..
+    container_name: plugin-creator
+    image: obsidian-automation:v1
+    volumes:
+      - ${PWD}:/app
+    network_mode: host
+    environment:
+      OUTPUT_DIRECTORY: "target/dist/"
+    command: ./docker/docker-command.sh prod

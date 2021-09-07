@@ -8,3 +8,5 @@ node_modules
 # build
 main.js
 *.js.map
+target/
+generated.rollup.config.js

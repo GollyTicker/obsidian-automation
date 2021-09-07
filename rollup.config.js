@@ -14,7 +14,7 @@ if you want to view the source visit the plugins github repository
 export default {
   input: 'src/main.ts',
   output: {
-    dir: 'test-vault/.obsidian/plugins/automation',
+    dir: '__OUTPUT_DIRECTORY__',
     sourcemap: 'inline',
     sourcemapExcludeSources: isProd,
     format: 'cjs',
