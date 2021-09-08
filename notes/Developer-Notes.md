@@ -1,6 +1,7 @@
 ## Start locally in DEV / PROD mode
 
-Start `scripts/restart-dev.sh` (or `scripts/restart-prod.sh`) and then open `test-vault` in Obsidian.
+Start `scripts/restart-dev.sh` (or `scripts/restart-prod.sh`) and
+[open test-vault in Obsidian](obsidian://open?vault=test-vault&file=README)
 
 Stop with `scripts/stop.sh`.
 

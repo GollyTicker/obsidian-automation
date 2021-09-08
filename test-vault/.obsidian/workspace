@@ -9,8 +9,8 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "FolderA/FA - Note 2.md",
-            "mode": "source"
+            "file": "Architecture.md",
+            "mode": "preview"
           }
         }
       }
@@ -68,7 +68,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "FolderA/FA - Note 2.md",
+                "file": "Architecture.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -88,8 +88,11 @@
   },
   "active": "95960f1fc4dab83c",
   "lastOpenFiles": [
-    "FolderA/FA - Note 2.md",
     "Untitled.md",
+    "Note 2.md",
+    "README.md",
+    "Note 1.md",
+    "FolderA/FA - Note 2.md",
     "FolderA/Untitled.md"
   ]
 }
