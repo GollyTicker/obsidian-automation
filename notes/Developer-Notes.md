@@ -26,5 +26,7 @@ Stop with `scripts/stop.sh`.
 * [ ] share first iteration with others and gather feedback
 
 * [ ] figure out how to support older versions of the obsidian client
-    * until how much in the past?
+  * until how much in the past?
 * [ ] mobile support? mobile first?
+
+* [ ] I updated the lib to `es2020` in tsconfig.js. Is that ok so? My IDE, was not properly detecting the right libs. 
