@@ -5,13 +5,20 @@ Start `scripts/restart-dev.sh` (or `scripts/restart-prod.sh`) and
 
 Stop with `scripts/stop.sh`.
 
+## Development loop
+
+1. Do something in obsidian
+2. Investigate the result and make code changes.
+3. Refresh Obsidian with `Ctrl + Alt + R`
+4. Continue at 1.
+
 ## Tasks
 
 * [x] create setup for watch mode reloading of the plugin
-    * [x] and run it inside the test-vault
+  * [x] and run it inside the test-vault
 * [x] create setup to copy production-mode plugin into test-vault
-    * [x] produce build output into a directory
-* [ ] decide on the language of the bots
+  * [x] produce build output into a directory
+* [x] decide on the language of the bots
 * [ ] decide for a small set of use cases to cover
 * [ ] share mock-view with others and gather feedback
 * [ ] create test scenarios for these use cases
