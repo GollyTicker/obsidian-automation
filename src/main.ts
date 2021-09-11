@@ -1,5 +1,7 @@
 import {App, Modal, Notice, Plugin, PluginSettingTab, Setting} from 'obsidian';
 
+import {parsimmonExample} from './parsimmon-example';
+
 interface MyPluginSettings {
 	mySetting: string;
 }
@@ -17,6 +19,7 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addRibbonIcon('dice', 'Sample Plugin', () => {
+			parsimmonExample();
 			new Notice('This is a notice!');
 		});
 
