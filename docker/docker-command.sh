@@ -10,5 +10,8 @@ perl -i -pe "s|__OUTPUT_DIRECTORY__|${OUTPUT_DIRECTORY}|" target/generated.rollu
 
 cp src/styles.css manifest.json "$OUTPUT_DIRECTORY"
 
-if [[ "$1" == "prod" ]]; then ARG="build"; else ARG="dev"; fi
-npm run $ARG
+if [[ "$1" == "prod" ]]; then
+  npm run build
+else
+  npm run dev
+fi
