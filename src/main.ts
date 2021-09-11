@@ -1,6 +1,6 @@
 import {App, Modal, Notice, Plugin, PluginSettingTab, Setting} from 'obsidian';
 
-import {parsimmonExample} from './parsimmon-example';
+import {findAndInitiateBotsSequentially} from './automation-language';
 
 interface MyPluginSettings {
 	mySetting: string;
@@ -19,7 +19,7 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addRibbonIcon('dice', 'Sample Plugin', () => {
-			parsimmonExample();
+			findAndInitiateBotsSequentially(this);
 			new Notice('This is a notice!');
 		});
 

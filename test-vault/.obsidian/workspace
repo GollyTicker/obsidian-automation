@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Architecture.md",
+            "file": "README.md",
             "mode": "source"
           }
         }
@@ -68,7 +68,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Architecture.md",
+                "file": "README.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -88,9 +88,9 @@
   },
   "active": "95960f1fc4dab83c",
   "lastOpenFiles": [
+    "README.md",
     "Architecture.md",
     "Note 1.md",
-    "README.md",
     "Use Cases.md",
     "Untitled.md",
     "Note 2.md",

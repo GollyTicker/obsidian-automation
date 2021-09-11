@@ -1,7 +1,53 @@
 import * as P from "parsimmon";
+import {TFile} from "obsidian";
+import MyPlugin from "./main";
+import {flatMap} from "./array-extensions";
+import {START_AUTOMATION_CODE_PREFIX} from "./constants";
+import {extractAutomationCodeFragments} from "./code-fragment-extraction";
+
+export function findAndInitiateBotsSequentially(plugin: MyPlugin) {
+    try {
+        testAutomation(plugin)
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+export async function testAutomation(plugin: MyPlugin) {
+
+    const vault = plugin.app.vault
+    const files: TFile[] = vault.getMarkdownFiles()
+
+    console.log("Found:", files.length, " markdown files.");
+
+    const readFiles = files
+        .map(async file => ({"fl": file, "str": await vault.read(file).catch(() => "")}))
+
+    // use this instead: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled
+    const filesWithBots = Promise.all(readFiles).then(ls =>
+        ls.filter(({str}) => str.contains(START_AUTOMATION_CODE_PREFIX))
+    )
+
+    const withBotCode = filesWithBots.then(ls =>
+        flatMap(ls, (obj =>
+                    extractAutomationCodeFragments(obj.str).map(res => ({...obj, ...res}))
+            )
+        )
+    )
+
+    const awaited = await withBotCode
+
+    awaited.forEach(obj =>
+        console.log("Positions: " + obj.fl.name + " with " +
+            obj.code
+        )
+    )
+
+    parsingExampleFromGitHub();
+}
 
 
-export function parsimmonExample() {
+export function parsingExampleFromGitHub() {
     let CLI = P.createLanguage({
         expression: function (r: any) {
             // whitespace-separated words, strings and options
