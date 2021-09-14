@@ -1,13 +1,34 @@
 import {BotDefinition} from "./entities";
 import * as P from "parsimmon";
-import {Parser, whitespace} from "parsimmon";
-import {toPromise} from "./extensions";
+import {string} from "parsimmon";
+import {regExpEscape, toPromise} from "./extensions";
 
 const SPECIAL_CHARS = ":%()\""
 
-type BotAst = Atom
+const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS) + "\\s"
 
-class Atom {
+const ATOM_BREAKER = new RegExp("[" + ATOM_BREAKER_REG_EXP_PART + "]")
+
+const ATOM_CHAR = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]");
+
+const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+");
+
+type BotAst = Atom | Expr
+
+interface Expr {
+
+}
+
+class App implements Expr {
+    constructor(public readonly head: Expr, public readonly args: Expr[]) {
+    }
+
+    toString() {
+        return "App(" + this.head.toString() + ", " + this.args.toString() + ")"
+    }
+}
+
+class Atom implements Expr {
     constructor(public readonly name: string) {
     }
 
@@ -16,21 +37,48 @@ class Atom {
     }
 }
 
-const BotLang = P.createLanguage({
-    atom: function (r: any): Parser<Atom> {
-        // todo. first example seems to not parse here.... TypeError for n.indexOf... continue here
-        return P.noneOf(r.atomBreakers)
-            .atLeast(1)
-            .trim(P.optWhitespace)
-            .map(strings => new Atom(strings.join("")));
+const BotLang = P.createLanguage<{
+    line: BotAst,
+    expr: Expr,
+    subsequentArgList: Expr[],
+    argListSep: '',
+    exprs: Expr[],
+    atom: Atom,
+    colon: string
+}>({
+    colon: r => P.regexp(/:/),
+    line: r => {
+        return P.seq(
+            r.expr,
+            P.end.or(
+                P.seq(P.lookahead(r.colon), r.subsequentArgList).map(t => t[1])
+            )
+        ).map(([head, optTail]) => {
+            if (optTail instanceof string || optTail instanceof undefined) {
+                // the head should be an atom here.
+                return head; // todo. check and warn?
+            } else {
+                return new App(head, <Expr[]>optTail);
+            }
+        })
     },
-    atomBreakers: function (): Parser<string> {
-        return P.oneOf(SPECIAL_CHARS).or(whitespace)
-    }
+    argListSep: r => P.string(",").wrap(P.optWhitespace, P.optWhitespace).result(''),
+    subsequentArgList: r => P.seq(r.colon, P.end.or(P.sepBy(r.expr, r.argListSep))), // todo.
+    exprs: r => P.string("todo").result(null),
+    expr: r => {
+        return r.atom; // todo.
+    },
+    atom: r => {
+        return P.seq(
+            P.optWhitespace, // todo. we only want non line-breaking whitespace
+            P.regexp(ATOM),
+            P.optWhitespace
+        ).map(ss => new Atom(ss[1]));
+    },
 })
 
 export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
-    return toPromise(BotLang.atom.parse(botDef.code))
+    return toPromise(BotLang.atom.parse(botDef.code), botDef.code)
 }
 
 export function parsingExampleFromGitHub() {
