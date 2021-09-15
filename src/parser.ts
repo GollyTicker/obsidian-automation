@@ -1,6 +1,6 @@
 import {BotDefinition} from "./entities";
 import * as P from "parsimmon";
-import {string} from "parsimmon";
+import {Parser} from "parsimmon";
 import {regExpEscape, toPromise} from "./extensions";
 
 const SPECIAL_CHARS = ":%()\""
@@ -13,10 +13,14 @@ const ATOM_CHAR = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]");
 
 const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+");
 
-type BotAst = Atom | Expr
+type BotAst = Seq
+
+const seq = (exprs: Expr[]) => new Seq(exprs);
+const atom = (name: string) => new Atom(name);
+const app = (head: Expr, tail: Expr[]) => new App(head, tail);
 
 interface Expr {
-
+    toString(): string
 }
 
 class App implements Expr {
@@ -25,6 +29,16 @@ class App implements Expr {
 
     toString() {
         return "App(" + this.head.toString() + ", " + this.args.toString() + ")"
+    }
+}
+
+class Seq extends App {
+    constructor(public readonly args: Expr[]) {
+        super("sequence", args);
+    }
+
+    toString(): string {
+        return "Sequence(" + this.args.toString() + ")";
     }
 }
 
@@ -37,48 +51,67 @@ class Atom implements Expr {
     }
 }
 
+function end<T>(): Parser<T[]> {
+    return P.end.result([]);
+}
+
+/* ================= !! IMPORTANT !! ======================
+The types in @types/parsimmon are older than the actual parser used!
+Check against the API at https://github.com/jneen/parsimmon/blob/master/API.md
+to be sure.
+*/
+
+
 const BotLang = P.createLanguage<{
-    line: BotAst,
+    botDefinition: BotAst,
+    line: Expr,
     expr: Expr,
-    subsequentArgList: Expr[],
-    argListSep: '',
-    exprs: Expr[],
+    subsequentArgListWithColonPrefix: Expr[],
+    argList: Expr[],
     atom: Atom,
     colon: string
 }>({
+    botDefinition: r => r.line.map(e => seq([e])),
     colon: r => P.regexp(/:/),
     line: r => {
         return P.seq(
             r.expr,
-            P.end.or(
-                P.seq(P.lookahead(r.colon), r.subsequentArgList).map(t => t[1])
-            )
-        ).map(([head, optTail]) => {
-            if (optTail instanceof string || optTail instanceof undefined) {
-                // the head should be an atom here.
-                return head; // todo. check and warn?
-            } else {
-                return new App(head, <Expr[]>optTail);
-            }
-        })
+            P.seq(P.lookahead(r.colon), r.subsequentArgListWithColonPrefix)
+                .map(t => t[1])
+                .or(end<Expr>())
+        ).chain(convertHeadAndOptionalTailToExpr);
     },
-    argListSep: r => P.string(",").wrap(P.optWhitespace, P.optWhitespace).result(''),
-    subsequentArgList: r => P.seq(r.colon, P.end.or(P.sepBy(r.expr, r.argListSep))), // todo.
-    exprs: r => P.string("todo").result(null),
+    subsequentArgListWithColonPrefix: r => P.seq(r.colon, r.argList.or(end())),
+    argList: r => P.sepBy(r.expr, argListSeparator),
     expr: r => {
         return r.atom; // todo.
     },
     atom: r => {
         return P.seq(
-            P.optWhitespace, // todo. we only want non line-breaking whitespace
+            P.optWhitespace,
             P.regexp(ATOM),
-            P.optWhitespace
-        ).map(ss => new Atom(ss[1]));
+            optWhitespace
+        ).map(ss => atom(ss[1]));
     },
 })
 
+function convertHeadAndOptionalTailToExpr([head, optTail]: [Expr, Expr[]]): Parser<Expr> {
+    if (optTail.length == 0) {
+        // the head should be an atom here.
+        return P.succeed(head);
+    } else {
+        return P.succeed(app(head, optTail));
+    }
+}
+
+// We only want to use non newline whitespace
+const optWhitespace = P.regexp(/^[ \t]*/)
+
+const argListSeparator: Parser<any> = P.string(",").wrap(optWhitespace, optWhitespace);
+
+
 export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
-    return toPromise(BotLang.atom.parse(botDef.code), botDef.code)
+    return toPromise(BotLang.botDefinition.parse(botDef.code), botDef.code)
 }
 
 export function parsingExampleFromGitHub() {

@@ -3,6 +3,10 @@ some-func
 ```
 
 ```oa
+123
+```
+
+```oa
 some-func: some-arg, 123, 4532
 ```
 
