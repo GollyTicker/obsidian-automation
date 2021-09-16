@@ -1,4 +1,5 @@
-import {END_CODEBLOCK_SEPARATOR, START_AUTOMATION_CODE_PREFIX} from "./constants";
+export const END_CODEBLOCK_SEPARATOR = "```"
+export const START_AUTOMATION_CODE_PREFIX = "```oa"
 
 export function extractAutomationCodeFragments(str: string): { start: number, end: number, code: string }[] {
     const results = [];

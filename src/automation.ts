@@ -1,9 +1,8 @@
 import {App} from "obsidian";
 import MyPlugin from "./main";
-import {START_AUTOMATION_CODE_PREFIX} from "./constants";
-import {extractAutomationCodeFragments} from "./code-fragment-extraction";
+import {extractAutomationCodeFragments, START_AUTOMATION_CODE_PREFIX} from "./code-fragment-extraction";
 import {BotDefinition, ReadFile} from "./entities";
-import {parseBot, parsingExampleFromGitHub} from "./parser";
+import {parseBot} from "./language/parser";
 
 export function findAndInitiateBotsSequentially(plugin: MyPlugin) {
     try {
@@ -33,14 +32,15 @@ export async function testAutomation(plugin: MyPlugin) {
         .then(bot => console.log("Parsed OK: " + bot.ast))
         .catch(err => console.log("Parsed FAIL: ", err))
     )
-
-    parsingExampleFromGitHub();
 }
+
+const debug = false;
 
 async function extractBotDefinitions(app: App): Promise<BotDefinition[]> {
     const files = getAllMarkdownFiles(app)
 
     const readFiles = files
+        .filter(file => debug ? file.name.contains("debug") : true)
         .map(async file => ({"fl": file, "str": await app.vault.read(file)}))
 
     function readFileContainsBot(settled: PromiseSettledResult<ReadFile>): ReadFile[] {

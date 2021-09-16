@@ -1,6 +1,6 @@
 import {App, Modal, Notice, Plugin, PluginSettingTab, Setting} from 'obsidian';
 
-import {findAndInitiateBotsSequentially} from './automation-language';
+import {findAndInitiateBotsSequentially} from './automation';
 
 interface MyPluginSettings {
     mySetting: string;
