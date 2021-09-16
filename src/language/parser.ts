@@ -33,10 +33,9 @@ const BotLang = P.createLanguage<{
     colonPrefixedOptionalArgList: Expr[],
     atom: Atom,
 }>({
-    botDefinition: r => r.line.map(e => seq([e])),
+    botDefinition: r => P.sepBy(r.line, P.optWhitespace).skip(P.end).map(seq),
     line: r => {
         return P.seq(r.expr, optional(r.colonPrefixedOptionalArgList))
-            .skip(P.end)
             .chain(headAndOptionalTailToExpr);
     },
     colonPrefixedOptionalArgList: r => colon.then(r.argList),
@@ -44,7 +43,7 @@ const BotLang = P.createLanguage<{
     expr: r => {
         return r.atom; // todo.
     },
-    atom: ignored => P.optWhitespace.then(P.regexp(ATOM)).skip(optSimpleWhitespace).map(atom),
+    atom: ignored => P.optWhitespace.then(P.regexp(ATOM)).map(atom),
 })
 
 function headAndOptionalTailToExpr([head, optTail]: [Expr, "" | Expr[]]): Parser<Expr> {
