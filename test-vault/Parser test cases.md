@@ -42,15 +42,19 @@ some-func: some-arg, 123, 4532
 ```
 
 `:` is right associative:
+```oa
+when: calc: plus, a, a
+become: js-eval: something
+```
 
 ```oa
 when: calc: plus, %a, %b
-become: js-eval %"%a + %b"
+become: js-eval: %"%a + %b"
 ```
 
 ```oa
 associations: (a: 3, b: 5)
-js-eval %"%a + %b"
+js-eval: %"%a + %b"
 ```
 
 ```oa

@@ -13,10 +13,6 @@ const SPECIAL_CHARS = ":,%()\""
 
 const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS) + "\\s"
 
-const ATOM_BREAKER = new RegExp("[" + ATOM_BREAKER_REG_EXP_PART + "]")
-
-const ATOM_CHAR = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]");
-
 const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+");
 
 /* ================= !! IMPORTANT !! ======================
@@ -24,6 +20,36 @@ The types in @types/parsimmon are older than the actual parser used!
 Check against the API at https://github.com/jneen/parsimmon/blob/master/API.md
 to be sure.
 */
+
+function seqByRightAssoc<A>(elt: Parser<A>, sepCombiner: { sep: Parser<string>, combiner: (head: A, tail: A[]) => A }[]): Parser<A[]> {
+    const indexed = sepCombiner.map((obj, i) =>
+        ({sepi: obj.sep.result(i), combiner: obj.combiner})
+    )
+
+    const fallbackEmptyList = P.succeed([])
+
+    const anySepParser = P.alt(...indexed.map(o => o.sepi))
+
+    function parseSepAndTailAndCombineWith(head: A, recursiveTailParser: () => Parser<A[]>) {
+        return anySepParser.chain(i =>
+            P.lazy(recursiveTailParser).map(tail => indexed[i].combiner(head, tail))
+        )
+    }
+
+    function recursiveRightAssociativeParser(): Parser<A[]> {
+        return P.alt(
+            elt.chain(head =>
+                P.alt(
+                    parseSepAndTailAndCombineWith(head, recursiveRightAssociativeParser),
+                    P.succeed([head])
+                )
+            ),
+            fallbackEmptyList
+        )
+    }
+
+    return recursiveRightAssociativeParser()
+}
 
 const BotLang = P.createLanguage<{
     botDefinition: BotAst,
@@ -39,7 +65,13 @@ const BotLang = P.createLanguage<{
             .chain(headAndOptionalTailToExpr);
     },
     colonPrefixedOptionalArgList: r => colon.then(r.argList),
-    argList: r => P.sepBy(r.expr, argListSeparator),
+    argList: r => {
+        return seqByRightAssoc(
+            r.expr, [
+                {sep: colon, combiner: app},
+                {sep: argListSeparator, combiner: (x, xs) => [x].concat(xs)}
+            ])
+    },
     expr: r => {
         return r.atom; // todo.
     },
