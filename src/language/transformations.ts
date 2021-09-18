@@ -44,24 +44,24 @@ export class UnfoldApp<S> {
 }
 
 
-export function asIndentedString(expr: Expr): string {
+export function asIndentedString(expr: Expr, concise: boolean = true): string {
     const spaces = ".  "
     const indentAfterFirstNewline = (str: string) => str.replace(/\n/g, "\n" + spaces)
     return fold(
-        (s) => "Atom(" + s + ")",
+        (s) => concise ? s : "Atom(" + s + ")",
         (head, tail) => {
-            const indented = "h " + indentAfterFirstNewline(head) + "\nt " + indentAfterFirstNewline(tail.join("\n"))
-            return "App(\n" + indented + "\n)"
+            const indented = "h  " + indentAfterFirstNewline(head) + "\nt  " + indentAfterFirstNewline(tail.join("\n"))
+            return concise ? indented : "App(\n" + indented + "\n)"
         },
         expr
     );
 }
 
-console.log(asIndentedString(atom("sdf")))
-console.log(asIndentedString(app(atom("sdf"), [atom("2")])))
-console.log(asIndentedString(app(atom("sdf"), [atom("2"), atom("3")])))
-console.log(asIndentedString(app(atom("sdf"), [app(atom("2"), []), atom("3")])))
-console.log(asIndentedString(app(atom("sdf"), [app(atom("2"), [atom("2"), atom("3")]), atom("3")])))
-console.log(asIndentedString(app(app(atom("2"), [atom("2"), atom("3")]), [app(atom("2"), [app(atom("2"), [atom("2"), atom("3")]), atom("3")]), atom("3")])))
+console.log(asIndentedString(atom("sdf"), false))
+console.log(asIndentedString(app(atom("sdf"), [atom("2")]), false))
+console.log(asIndentedString(app(atom("sdf"), [atom("2"), atom("3")]), false))
+console.log(asIndentedString(app(atom("sdf"), [app(atom("2"), []), atom("3")]), false))
+console.log(asIndentedString(app(atom("sdf"), [app(atom("2"), [atom("2"), atom("3")]), atom("3")]), false))
+console.log(asIndentedString(app(app(atom("2"), [atom("2"), atom("3")]), [app(atom("2"), [app(atom("2"), [atom("2"), atom("3")]), atom("3")]), atom("3")]), false))
 
 // todo. random generated trees could come here
