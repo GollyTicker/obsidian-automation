@@ -3,7 +3,7 @@ import MyPlugin from "./main";
 import {extractAutomationCodeFragments, START_AUTOMATION_CODE_PREFIX} from "./code-fragment-extraction";
 import {BotDefinition, ReadFile} from "./entities";
 import {parseBot} from "./language/parser";
-import {asIndentedString} from "./language/transformations";
+import {asIndentedString} from "./language/transformation/folding";
 
 export function findAndInitiateBotsSequentially(plugin: MyPlugin) {
     try {
@@ -24,8 +24,6 @@ export async function testAutomation(plugin: MyPlugin) {
     const app = plugin.app
 
     const botDefinitions = await extractBotDefinitions(app)
-
-    botDefinitions.forEach(bot => console.log("Positions: " + bot.fl.name + " with " + bot.code))
 
     const parsedExpressions = botDefinitions.map(botDef => parseBot(botDef).then(ast => ({...botDef, ast: ast})))
 

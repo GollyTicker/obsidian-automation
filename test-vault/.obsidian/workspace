@@ -4,13 +4,13 @@
     "type": "split",
     "children": [
       {
-        "id": "95960f1fc4dab83c",
+        "id": "9ea40ae0d0b3093e",
         "type": "leaf",
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Parser test cases.md",
-            "mode": "preview"
+            "file": "Note 1.md",
+            "mode": "source"
           }
         }
       }
@@ -68,7 +68,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Parser test cases.md",
+                "file": "Note 1.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -86,17 +86,17 @@
     "width": 300,
     "collapsed": true
   },
-  "active": "95960f1fc4dab83c",
+  "active": "9ea40ae0d0b3093e",
   "lastOpenFiles": [
-    "Parser test cases.md",
     "Note 1.md",
     "debug.md",
+    "FolderA/FA - Note 1.md",
+    "FolderA/FA - Note 2.md",
+    "Parser test cases.md",
     "README.md",
+    "run te.md",
     "Parser test cases 1.md",
     "Untitled.md",
-    "Untitled 1.md",
-    "Architecture.md",
-    "Use Cases.md",
-    "Note 2.md"
+    "Untitled 1.md"
   ]
 }

@@ -4,7 +4,7 @@ FROM node:16
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY *.json *.js ./
 
 RUN npm ci
 

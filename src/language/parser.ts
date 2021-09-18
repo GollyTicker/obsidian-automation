@@ -1,3 +1,5 @@
+// noinspection JSUnusedLocalSymbols
+
 import {BotDefinition} from "../entities";
 import * as P from "parsimmon";
 import {Mark, Parser} from "parsimmon";
@@ -16,7 +18,7 @@ Check against the API at https://github.com/jneen/parsimmon/blob/master/API.md
 to be sure.
 */
 
-const BotLang = P.createLanguage<{
+export const BotLang = P.createLanguage<{
     botDefinition: BotAst,
     line: Expr,
     expr: Expr,
@@ -47,7 +49,7 @@ const BotLang = P.createLanguage<{
             optional(r.colonPrefixedOptionalArgList) // if : then argList => App
         ).map(combineWithOptionalArgList)
     },
-    atom: ignored => P.optWhitespace.then(P.regexp(ATOM)).map(atom),
+    atom: () => P.optWhitespace.then(P.regexp(ATOM)).map(atom),
 })
 
 const combineWithOptionalArgList = (result: [Expr, "" | Expr[]]) => {
@@ -101,6 +103,7 @@ function seqByRightAssoc<A>(elt: Parser<A>, sepCombiner: { sep: Parser<string>, 
     return recursiveRightAssociativeParser()
 }
 
+// @ts-ignore
 function debugLog<T>(str: string) {
     return (m: Mark<T>) => {
         console.log(str, m.start, m.end);

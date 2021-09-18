@@ -4,6 +4,7 @@
   "description": "Automate Workflows in Obsidian",
   "repository": "https://github.com/GollyTicker/obsidian-automation",
   "main": "main.js",
+  "type": "module",
   "scripts": {
     "dev": "rollup --config target/generated.rollup.config.js -w",
     "build": "rollup --config target/generated.rollup.config.js --environment BUILD:production"
@@ -15,7 +16,7 @@
     "@rollup/plugin-commonjs": "^18.0.0",
     "@rollup/plugin-node-resolve": "^11.2.1",
     "@rollup/plugin-typescript": "^8.2.1",
-    "@types/node": "^14.14.37",
+    "@types/node": "^14.17.17",
     "@types/parsimmon": "^1.10.6",
     "@types/random-seed": "^0.3.3",
     "obsidian": "^0.12.0",
@@ -24,6 +25,6 @@
     "rollup": "^2.32.1",
     "ts-xor": "^1.0.8",
     "tslib": "^2.2.0",
-    "typescript": "^4.2.4"
+    "typescript": "^4.4.3"
   }
 }

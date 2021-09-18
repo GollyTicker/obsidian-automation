@@ -1,6 +1,9 @@
 import {App, Modal, Notice, Plugin, PluginSettingTab, Setting} from 'obsidian';
 
 import {findAndInitiateBotsSequentially} from './automation';
+import {runAll} from "./tester/tester";
+import {add} from "./language/transformation/transformations.test";
+import {add as add2} from "./language/parser.test";
 
 interface MyPluginSettings {
     mySetting: string;
@@ -8,6 +11,13 @@ interface MyPluginSettings {
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
     mySetting: 'default'
+}
+
+function runTests() {
+    // @ts-ignore
+    add;
+    add2;
+    runAll()
 }
 
 export default class MyPlugin extends Plugin {
@@ -26,8 +36,8 @@ export default class MyPlugin extends Plugin {
         this.addStatusBarItem().setText('Status Bar Text');
 
         this.addCommand({
-            id: 'open-sample-modal',
-            name: 'Open Sample Modal',
+            id: 'run-tests',
+            name: 'Run Tests',
             // callback: () => {
             // 	console.log('Simple Callback');
             // },
@@ -35,7 +45,8 @@ export default class MyPlugin extends Plugin {
                 let leaf = this.app.workspace.activeLeaf;
                 if (leaf) {
                     if (!checking) {
-                        new SampleModal(this.app).open();
+                        runTests();
+                        new SampleModal(this.app)/*.open();*/
                     }
                     return true;
                 }
