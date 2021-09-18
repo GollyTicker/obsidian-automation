@@ -3,22 +3,12 @@ import * as P from "parsimmon";
 import {Mark, Parser} from "parsimmon";
 import {app, Atom, atom, BotAst, Expr, seq} from "./ast";
 import {optional, optSimpleWhitespace} from "./utils";
-import {regExpEscape, toPromise} from "../util";
+import {regExpEscape, toPromise} from "../common/util";
+import {BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, SPECIAL_CHARS} from "./constants";
 
 export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
     return toPromise(BotLang.botDefinition.parse(botDef.code), botDef.code)
 }
-
-const COMMA = ","
-const COLON = ":"
-const BRACKET_OPEN = "("
-const BRACKET_CLOSE = ")"
-
-const SPECIAL_CHARS = COLON + COMMA + "%" + BRACKET_OPEN + BRACKET_CLOSE + "\""
-
-const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS) + "\\s"
-
-const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+");
 
 /* ================= !! IMPORTANT !! ======================
 The types in @types/parsimmon are older than the actual parser used!
@@ -38,6 +28,7 @@ const BotLang = P.createLanguage<{
     line: r => {
         return r.expr;
     },
+    // todo. should we allow spaces between the atom/Expr and the colon?
     colonPrefixedOptionalArgList: r => colon.then(r.argList),
     argList: r => {
         return seqByRightAssoc(
@@ -62,6 +53,10 @@ const BotLang = P.createLanguage<{
 const combineWithOptionalArgList = (result: [Expr, "" | Expr[]]) => {
     return result[1] === "" ? result[0] : app(result[0], result[1])
 }
+
+const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS) + "\\s"
+
+const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+");
 
 const comma = P.regexp(new RegExp(regExpEscape(COMMA)))
 

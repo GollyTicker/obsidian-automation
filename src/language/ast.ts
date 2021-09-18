@@ -4,10 +4,7 @@ export type BotAst = Seq
 
 export type Expr = XOR<Atom, App>
 
-export abstract class AstNode {
-    // toString(): string {
-    //     return asIndentedString(<Expr><unknown>this)
-    // }
+export interface AstNode {
 }
 
 export class Atom implements AstNode {
