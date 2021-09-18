@@ -42,10 +42,34 @@ some-func: some-arg, 123, 4532
 ```
 
 `:` is right associative:
+
 ```oa
 when: calc: plus, a, a
 become: js-eval: something
 ```
+
+parentheses can be used
+
+```oa
+when: (calc: plus), a, a
+become: js-eval: something
+```
+
+strings
+
+```oa
+when: calc: "plus", "a,dvs sfS32fr=W%ra"
+become: js-eval: something
+```
+
+prefixing an expression with `%` turns it into an AST-interpoplation. its equivalent ot `var: `
+
+```oa
+when: calc: plus, %a, var: b
+become: js-eval: %"a + b"
+```
+
+`%` inside AST-interpolation is registered as variable substitution
 
 ```oa
 when: calc: plus, %a, %b

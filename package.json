@@ -20,6 +20,7 @@
     "obsidian": "^0.12.0",
     "parsimmon": "^1.18.0",
     "rollup": "^2.32.1",
+    "ts-xor": "^1.0.8",
     "tslib": "^2.2.0",
     "typescript": "^4.2.4"
   }

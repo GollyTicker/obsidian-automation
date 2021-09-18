@@ -3,6 +3,7 @@ import MyPlugin from "./main";
 import {extractAutomationCodeFragments, START_AUTOMATION_CODE_PREFIX} from "./code-fragment-extraction";
 import {BotDefinition, ReadFile} from "./entities";
 import {parseBot} from "./language/parser";
+import {asIndentedString} from "./language/transformations";
 
 export function findAndInitiateBotsSequentially(plugin: MyPlugin) {
     try {
@@ -29,7 +30,7 @@ export async function testAutomation(plugin: MyPlugin) {
     const parsedExpressions = botDefinitions.map(botDef => parseBot(botDef).then(ast => ({...botDef, ast: ast})))
 
     parsedExpressions.forEach(pro => pro
-        .then(bot => console.log("Parsed OK: " + bot.ast))
+        .then(bot => console.log("Parsed OK: " + asIndentedString(bot.ast)))
         .catch(err => console.log("Parsed FAIL: ", err))
     )
 }

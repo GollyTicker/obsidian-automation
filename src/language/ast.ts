@@ -1,37 +1,36 @@
-export const seq = (exprs: Expr[]) => new Seq(exprs);
-export const atom = (name: string) => new Atom(name);
-export const app = (head: Expr, tail: Expr[]) => new App(head, tail);
+import {XOR} from "ts-xor";
 
 export type BotAst = Seq
 
-export interface Expr {
-    toString(): string
+export type Expr = XOR<Atom, App>
+
+export abstract class AstNode {
+    // toString(): string {
+    //     return asIndentedString(<Expr><unknown>this)
+    // }
 }
 
-class App implements Expr {
-    constructor(public readonly head: Expr, public readonly args: Expr[]) {
-    }
-
-    toString() {
-        return "App(" + this.head.toString() + ", " + this.args.toString() + ")"
-    }
-}
-
-class Seq extends App {
-    constructor(public readonly args: Expr[]) {
-        super("sequence", args);
-    }
-
-    toString(): string {
-        return "Sequence(" + this.args.toString() + ")";
-    }
-}
-
-export class Atom implements Expr {
+export class Atom implements AstNode {
     constructor(public readonly name: string) {
     }
+}
 
-    toString() {
-        return "Atom(" + this.name + ")"
+// todo. hm.... if we simplify head and tail to a list... then we get LISP!
+export class App implements AstNode {
+    // its recommended to use atoms as heads to decrease mental burden
+    constructor(public readonly head: Expr, public readonly tail: Expr[]) {
     }
 }
+
+// Seq(...) == App(Atom(sequence), ...)
+export class Seq extends App {
+    constructor(public readonly tail: Expr[]) {
+        super(atom("sequence"), tail);
+    }
+}
+
+export const atom = (name: string) => new Atom(name);
+export const app = (head: Expr, tail: Expr[]) => new App(head, tail);
+
+export const SEQUENCE = atom("sequence")
+export const seq = (exprs: Expr[]) => new App(SEQUENCE, exprs);
