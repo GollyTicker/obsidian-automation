@@ -5,6 +5,8 @@
 // importing it in the main.ts in the runTests function.
 // Finally, one can run "Run Tests" in the command palette to run all tests.
 
+import {Notice} from "obsidian";
+
 let collectedTests: (() => void)[] = []
 let successfulTests = 0
 
@@ -29,10 +31,15 @@ export function test(desc: string, fn: () => void): void {
 }
 
 export function runAll() {
+    new Notice("Running all tests", 3000);
     collectedTests.forEach((f) => f())
     if (collectedTests.length == successfulTests) {
-        console.log(`✅✅✅ All ${successfulTests} tests passed ✅✅✅`)
+        const msg = `✅✅✅ All ${successfulTests} tests passed ✅✅✅`
+        console.log(msg)
+        new Notice(msg, 5000)
     } else {
-        console.log(`❌❌❌ ${collectedTests.length - successfulTests} tests failed! ❌❌❌`)
+        const msg = `❌❌❌ ${collectedTests.length - successfulTests} tests failed! ❌❌❌`
+        console.log(msg)
+        new Notice(msg, 5000)
     }
 }

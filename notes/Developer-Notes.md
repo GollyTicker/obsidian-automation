@@ -12,6 +12,14 @@ Stop with `scripts/stop.sh`.
 3. Refresh Obsidian with `Ctrl + Alt + R`
 4. Continue at 1.
 
+## Tests
+
+To run the tests:
+
+1. start the plugin in dev mode just as above.
+2. Press `Ctrl + P` to open the command palette.
+3. Type `test` and run the command `Run Tests`.
+
 ## Tasks
 
 * [x] create setup for watch mode reloading of the plugin
