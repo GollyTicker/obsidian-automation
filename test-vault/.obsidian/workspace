@@ -9,8 +9,8 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Note 1.md",
-            "mode": "source"
+            "file": "Main Page Content Definition.md",
+            "mode": "preview"
           }
         }
       }
@@ -68,7 +68,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Note 1.md",
+                "file": "Main Page Content Definition.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -88,6 +88,7 @@
   },
   "active": "9ea40ae0d0b3093e",
   "lastOpenFiles": [
+    "Untitled.md",
     "Note 1.md",
     "debug.md",
     "FolderA/FA - Note 1.md",
@@ -96,7 +97,6 @@
     "README.md",
     "run te.md",
     "Parser test cases 1.md",
-    "Untitled.md",
     "Untitled 1.md"
   ]
 }
