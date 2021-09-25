@@ -14,12 +14,22 @@ test("fold works", () => {
 })
 
 test("showcase indented string", () => {
-    console.log(asIndentedString(atom("sdf"), true))
-    console.log(asIndentedString(app(atom("sdf"), [atom("2")]), true))
-    console.log(asIndentedString(app(atom("sdf"), [atom("2"), atom("3")]), true))
-    console.log(asIndentedString(app(atom("sdf"), [app(atom("2"), []), atom("3")]), true))
-    console.log(asIndentedString(app(atom("sdf"), [app(atom("2"), [atom("2"), atom("3")]), atom("3")]), true))
-    console.log(asIndentedString(app(app(atom("2"), [atom("2"), atom("3")]), [app(atom("2"), [app(atom("2"), [atom("2"), atom("3")]), atom("3")]), atom("3")]), true))
+    const asts = [
+        atom("sdf"),
+        app(atom("sdf"), [atom("2")]),
+        app(atom("sdf"), [atom("2"), atom("3")]),
+        app(atom("sdf"), [app(atom("2"), []), atom("3")]),
+        app(atom("sdf"), [app(atom("2"), [atom("2"), atom("3")])]),
+        app(app(atom("2"), [atom("2"), atom("3")]), [app(atom("2"), [app(atom("2"), [atom("2"), atom("3")]), atom("3")]), atom("3"), atom("3")])
+    ]
+
+    asts.forEach(ast => {
+        console.log(asIndentedString(ast, false));
+    })
+
+    asts.forEach(ast => {
+        console.log(asIndentedString(ast, true));
+    })
 })
 
 test("showcase AST generation", () => {

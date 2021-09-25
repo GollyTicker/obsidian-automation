@@ -5,10 +5,11 @@ export function asIndentedString(expr: Expr, fullForm: boolean = false): string 
     const spaces = ".  "
     const indentAfterFirstNewline = (str: string) => str.replace(/\n/g, "\n" + spaces)
     return fold(
-        (s) => fullForm ? "Atom(" + s + ")" : s,
+        (s) => fullForm ? "Atom(" + s + ")" : "(" + s + ")",
         (head, tail) => {
             const indented = "h  " + indentAfterFirstNewline(head) + "\nt  " + indentAfterFirstNewline(tail.join("\n"))
-            return fullForm ? "App(\n" + indented + "\n)" : indented
+            const bracketed = `(${head}): ${tail.map(x => '(' + x + ')').join(',')}`
+            return fullForm ? "App(\n" + indented + "\n)" : bracketed
         },
         expr
     );
