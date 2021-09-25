@@ -1,5 +1,4 @@
-app with tail:
 
 ```oa
-some-func: some-arg, another-arg
+when: (a: b b) (c: d d) e
 ```

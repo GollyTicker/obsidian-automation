@@ -4,6 +4,12 @@ import {extractAutomationCodeFragments, START_AUTOMATION_CODE_PREFIX} from "./co
 import {BotDefinition, ReadFile} from "./entities";
 import {parseBot} from "./language/parser";
 import {asIndentedString} from "./language/transformation/folding";
+import {debugConfig} from "./debug";
+
+// @ts-ignore - Global var defs
+window.__obsidianAutomation = {
+    astNodeToString: asIndentedString
+};
 
 export function findAndInitiateBotsSequentially(plugin: MyPlugin) {
     try {
@@ -28,18 +34,16 @@ export async function testAutomation(plugin: MyPlugin) {
     const parsedExpressions = botDefinitions.map(botDef => parseBot(botDef).then(ast => ({...botDef, ast: ast})))
 
     parsedExpressions.forEach(pro => pro
-        .then(bot => console.log("Parsed OK: \n" + asIndentedString(bot.ast, false)))
+        .then(bot => console.log("Parsed OK - " + bot.fl.name + "\n" + asIndentedString(bot.ast, true)))
         .catch(err => console.log("Parsed FAIL: ", err))
     )
 }
-
-const debug = false;
 
 async function extractBotDefinitions(app: App): Promise<BotDefinition[]> {
     const files = getAllMarkdownFiles(app)
 
     const readFiles = files
-        .filter(file => debug ? file.name.contains("debug") : true)
+        .filter(file => debugConfig.onlyRunDebugFiles ? file.name.contains("debug") : true)
         .map(async file => ({"fl": file, "str": await app.vault.read(file)}))
 
     function readFileContainsBot(settled: PromiseSettledResult<ReadFile>): ReadFile[] {

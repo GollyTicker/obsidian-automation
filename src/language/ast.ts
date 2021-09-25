@@ -4,18 +4,25 @@ export type BotAst = Seq
 
 export type Expr = XOR<Atom, App>
 
-export interface AstNode {
+export abstract class AstNode {
+
+    public toString(): string {
+        // @ts-ignore
+        return window.__obsidianAutomation.astNodeToString(this)
+    }
 }
 
-export class Atom implements AstNode {
+export class Atom extends AstNode {
     constructor(public readonly name: string) {
+        super()
     }
 }
 
 // todo. hm.... if we simplify head and tail to a list... then we get LISP!
-export class App implements AstNode {
+export class App extends AstNode {
     // its recommended to use atoms as heads to decrease mental burden
     constructor(public readonly head: Expr, public readonly tail: Expr[]) {
+        super()
     }
 }
 

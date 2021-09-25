@@ -4,6 +4,7 @@ import {findAndInitiateBotsSequentially} from './automation';
 import {runAll} from "./tester/tester";
 import {add} from "./language/transformation/transformations.test";
 import {add as add2} from "./language/parser.test";
+import {debugConfig} from "./debug";
 
 interface MyPluginSettings {
     mySetting: string;
@@ -29,8 +30,15 @@ export default class MyPlugin extends Plugin {
         await this.loadSettings();
 
         this.addRibbonIcon('dice', 'Kickoff Automation', () => {
+            debugConfig.onlyRunDebugFiles = false
             findAndInitiateBotsSequentially(this);
             new Notice('Who let the bots out? Woof!');
+        });
+
+        this.addRibbonIcon('???', 'Run Debug File', () => {
+            debugConfig.onlyRunDebugFiles = true
+            findAndInitiateBotsSequentially(this);
+            new Notice('Debug debug!');
         });
 
         this.addStatusBarItem().setText('Status Bar Text');
