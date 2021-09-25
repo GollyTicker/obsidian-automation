@@ -15,6 +15,25 @@ test("parser parses test expressions", () => {
         "some-func: some-arg, 123, 4532\n" +
         "some-func: some-arg, 123, 4532",
 
+        "some-func: some-arg 123 4532\n" +
+        "some-func: some-arg 123 4532",
+
+        "when: (a : b b) (c :d d) e",
+
+        "when: (a: b b) (c: d d) e\n" +
+        "when: (a: b,b) (c: d d) e\n" +
+        "when: (a: b, b) (c: d d) e\n" +
+        "when: (a: b ,b) (c: d d) e\n" +
+        "when: (a: b b),(c: d d) e\n" +
+        "when: (a: b b), (c: d d) e\n" +
+        "when: (a: b b) ,(c: d d) e\n" +
+        "when: (a: b b) (c: d,d) e\n" +
+        "when: (a: b b) (c: d, d) e\n" +
+        "when: (a: b b) (c: d ,d) e\n" +
+        "when: (a: b b) (c: d d),e\n" +
+        "when: (a: b b) (c: d ,d), e\n" +
+        "when: (a: b b) (c: d ,d) ,e",
+
         "when: calc: plus, a, a\n" +
         "become: js-eval: something",
         //

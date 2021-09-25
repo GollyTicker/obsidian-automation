@@ -10,5 +10,6 @@ export function optional<T>(parser: Parser<T>): Parser<T | ''> {
 }
 
 // We only want to use non newline whitespace
+export const mandatorySimpleWhitespace = P.regexp(/[ \t]+/)
 export const optSimpleWhitespace = P.regexp(/[ \t]*/)
 

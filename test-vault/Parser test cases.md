@@ -41,6 +41,13 @@ some-func: some-arg, 123, 4532
 some-func: some-arg, 123, 4532
 ```
 
+separating `,` is optional
+
+```oa
+some-func: some-arg 123 4532
+some-func: some-arg 123 4532
+```
+
 `:` is right associative:
 
 ```oa
@@ -52,6 +59,19 @@ parentheses can be used
 
 ```oa
 when: (calc: plus), a, a
+become: js-eval: something
+```
+
+parentheses enable multi-line definitions
+
+```oa
+when: (calc:
+plus), a, a
+when: (calc: a s ,d
+plus
+s
+d s
+)
 become: js-eval: something
 ```
 

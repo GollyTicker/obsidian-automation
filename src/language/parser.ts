@@ -2,11 +2,12 @@
 
 import {BotDefinition} from "../entities";
 import * as P from "parsimmon";
-import {Mark, Parser} from "parsimmon";
+import {Parser} from "parsimmon";
 import {app, Atom, atom, BotAst, Expr, seq} from "./ast";
-import {optional, optSimpleWhitespace} from "./utils";
+import {mandatorySimpleWhitespace, optSimpleWhitespace} from "./utils";
 import {regExpEscape, toPromise} from "../common/util";
 import {BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, SPECIAL_CHARS} from "./constants";
+import {addLanguageDebugging} from "./debug";
 
 export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
     return toPromise(BotLang.botDefinition.parse(botDef.code), botDef.code)
@@ -18,60 +19,66 @@ Check against the API at https://github.com/jneen/parsimmon/blob/master/API.md
 to be sure.
 */
 
+// todo. important constraint. Each PARSER must consume any prefixing whitespace itself. Suffix whitespace is not of its concern.
+// To achieve that, preSpace(parser) can be called
 export const BotLang = P.createLanguage<{
     botDefinition: BotAst,
     line: Expr,
     expr: Expr,
     atom: Atom,
-    argList: Expr[],
-    colonPrefixedOptionalArgList: Expr[],
-}>({
+    argList: Expr[]
+}>(addLanguageDebugging({
     botDefinition: r => P.sepBy(r.line, P.optWhitespace).skip(P.end).map(seq),
     line: r => {
         return r.expr;
     },
-    // todo. should we allow spaces between the atom/Expr and the colon?
-    colonPrefixedOptionalArgList: r => colon.then(r.argList),
     argList: r => {
         return seqByRightAssoc(
-            r.expr, [
+            r.expr,
+            [
                 {sep: colon, combiner: (x, xs) => [app(x, xs)]},
                 {sep: argListSeparator, combiner: (x, xs) => [x].concat(xs)}
-            ])
+            ]
+        )
     },
+    // ( (expr) | Atom | "str" | %expr ) (: argList)?
     expr: r => {
-        return P.seq(
-            P.alt(
-                // (expr) | Atom | "str" | %expr
-                r.atom,
-                r.expr.wrap(bracketOpen.skip(optSimpleWhitespace), optSimpleWhitespace.skip(bracketClose)),
-            ),
-            optional(r.colonPrefixedOptionalArgList) // if : then argList => App
-        ).map(combineWithOptionalArgList)
-    },
-    atom: () => P.optWhitespace.then(P.regexp(ATOM)).map(atom),
-})
 
-const combineWithOptionalArgList = (result: [Expr, "" | Expr[]]) => {
-    return result[1] === "" ? result[0] : app(result[0], result[1])
-}
+        const head = P.alt(
+            r.atom,
+            r.expr.wrap(bracketOpen, bracketClose)
+        )
+
+        function optColonPrefixedArgList(hd: Expr): Parser<Expr> {
+            return P.alt(
+                colon.then(r.argList).map(tl => app(hd, tl)),
+                P.succeed(hd)
+            )
+        }
+
+        return preSpace(head.chain(optColonPrefixedArgList))
+    },
+    atom: () => preSpace(P.regexp(ATOM)).map(atom),
+}))
 
 const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS) + "\\s"
 
-const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+");
+const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+")
 
-const comma = P.regexp(new RegExp(regExpEscape(COMMA)))
+const comma = preSpace(P.regexp(new RegExp(regExpEscape(COMMA))))
 
-const colon = P.regexp(new RegExp(regExpEscape(COLON)))
+const colon = preSpace(P.regexp(new RegExp(regExpEscape(COLON))))
 
-const bracketOpen = P.regexp(new RegExp(regExpEscape(BRACKET_OPEN)))
+const bracketOpen = preSpace(P.regexp(new RegExp(regExpEscape(BRACKET_OPEN))))
 
-const bracketClose = P.regexp(new RegExp(regExpEscape(BRACKET_CLOSE)))
+const bracketClose = preSpace(P.regexp(new RegExp(regExpEscape(BRACKET_CLOSE))))
 
-const argListSeparator: Parser<any> = optSimpleWhitespace
-    .then(comma)
-    .skip(optSimpleWhitespace)
+const argListSeparator: Parser<any> = P.alt(comma, mandatorySimpleWhitespace)
 
+
+function preSpace<T>(parser: Parser<T>): Parser<T> {
+    return optSimpleWhitespace.then(parser)
+}
 
 function seqByRightAssoc<A>(elt: Parser<A>, sepCombiner: { sep: Parser<string>, combiner: (head: A, tail: A[]) => A[] }[]): Parser<A[]> {
     const indexed = sepCombiner.map((obj, i) =>
@@ -103,10 +110,3 @@ function seqByRightAssoc<A>(elt: Parser<A>, sepCombiner: { sep: Parser<string>, 
     return recursiveRightAssociativeParser()
 }
 
-// @ts-ignore
-function debugLog<T>(str: string) {
-    return (m: Mark<T>) => {
-        console.log(str, m.start, m.end);
-        return m.value;
-    };
-}
