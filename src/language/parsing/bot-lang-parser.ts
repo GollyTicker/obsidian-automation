@@ -35,8 +35,6 @@ export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
 *   its descendents and children.
 * */
 
-// todo. could use typescript decorations
-
 // ================ basic definitions ====================
 
 const comma = preOptSpaceB(regexp(new RegExp(regExpEscape(COMMA))))
