@@ -10,8 +10,10 @@ import {
     chainB,
     lazyChainB,
     mapB,
+    mapStB,
     regexp,
     result,
+    run,
     St,
     succeed,
     surroundB,
@@ -33,15 +35,27 @@ export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
 *   its descendents and children.
 * */
 
+// todo. could use typescript decorations
+
 // ================ basic definitions ====================
 
 const comma = preOptSpaceB(regexp(new RegExp(regExpEscape(COMMA))))
 
 const colon = preOptSpaceB(regexp(new RegExp(regExpEscape(COLON))))
 
-const bracketOpen = preOptSpaceB(regexp(new RegExp(regExpEscape(BRACKET_OPEN))))
+const bracketOpen = preOptSpaceB(
+    mapStB(
+        regexp(new RegExp(regExpEscape(BRACKET_OPEN))),
+        bracketDepthModifier(1)
+    )
+)
 
-const bracketClose = preOptSpaceB(regexp(new RegExp(regExpEscape(BRACKET_CLOSE))))
+const bracketClose = preOptSpaceB(
+    mapStB(
+        regexp(new RegExp(regExpEscape(BRACKET_CLOSE))),
+        bracketDepthModifier(-1)
+    )
+)
 
 const argListSeparator = altB(comma, spaceParser('mandatory'))
 
@@ -93,17 +107,21 @@ function argListBL(): BotParser<Expr[]> {
 
 // ================= BotLang entrypoint ===================
 
-const initialState: St = {whiteSpace: 'simple'}
+const initialState: St = {bracketDepth: 0}
 
 export const BotLang = P.createLanguage<{ botDefinition: BotAst }>({
     botDefinition: () =>
-        P.sepBy(exprBL()(initialState).map(result), P.optWhitespace)
+        P.sepBy(run(exprBL())(initialState).map(result), P.optWhitespace)
             .skip(P.end)
             .map(seq)
 })
 
 
 // ===================== functions ========================
+
+function bracketDepthModifier(i: number): (st: St) => St {
+    return (st) => ({...st, bracketDepth: st.bracketDepth + i})
+}
 
 function preOptSpaceB<T>(parser: BotParser<T>): BotParser<T> {
     return thenB(spaceParser('optional'), parser)

@@ -18,6 +18,10 @@ const spaceParsersMap: { [k in WhiteSpace]: { [f in MandatoryFlag]: Parser<strin
     }
 }
 
+function whiteSpaceType(st: St): WhiteSpace {
+    return st.bracketDepth >= 1 ? 'w/newline' : 'simple'
+}
+
 export const spaceParser: ((flag: MandatoryFlag) => BotParser<string>) = (flag) => (st: St) => {
-    return spaceParsersMap[st.whiteSpace][flag].map(withSt(st))
+    return spaceParsersMap[whiteSpaceType(st)][flag].map(withSt(st))
 }

@@ -9,7 +9,7 @@ to be sure.
 
 export type WhiteSpace = 'simple' | 'w/newline'
 
-export type St = { whiteSpace: WhiteSpace }
+export type St = { bracketDepth: number }
 
 export type BotParser<T> = (state: St) => Parser<[T, St]>
 
@@ -89,4 +89,8 @@ export function skipSecondB<T>(first: BotParser<T>, second: BotParser<any>): Bot
 
 export function altB<T>(...parsers: BotParser<T>[]): BotParser<T> {
     return (st) => P.alt<[T, St]>(...parsers.map(p => p(st)))
+}
+
+export function mapStB<T>(parser: BotParser<T>, func: (st: St) => St): BotParser<T> {
+    return (st0: St) => parser(st0).map(([t, st1]) => [t, func(st1)])
 }

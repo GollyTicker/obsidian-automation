@@ -36,6 +36,15 @@ test("parser parses test expressions", () => {
 
         "when: calc: plus, a, a\n" +
         "become: js-eval: something",
+
+        "when: (calc:\n" +
+        "plus), a, a\n" +
+        "when: (calc: a s ,d\n" +
+        "plus\n" +
+        "s\n" +
+        "d s\n" +
+        ")\n" +
+        "become: js-eval: something"
         //
         // "when: (calc: plus), a, a\n" +
         // "become: js-eval: something",
