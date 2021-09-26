@@ -3,7 +3,7 @@ import {App, Modal, Notice, Plugin, PluginSettingTab, Setting} from 'obsidian';
 import {findAndInitiateBotsSequentially} from './automation';
 import {runAll} from "./tester/tester";
 import {add} from "./language/transformation/transformations.test";
-import {add as add2} from "./language/parser.test";
+import {add as add2} from "./language/parsing/bot-lang-parser.test";
 import {debugConfig} from "./debug";
 
 interface MyPluginSettings {

@@ -1,5 +1,5 @@
-import {test} from "../tester/tester";
-import {BotLang} from "./parser";
+import {test} from "../../tester/tester";
+import {BotLang} from "./bot-lang-parser";
 
 export const add = 0;
 
@@ -48,3 +48,7 @@ test("parser parses test expressions", () => {
     ]
     codes.forEach(code => BotLang.botDefinition.tryParse(code))
 })
+
+// todo. actually test the created note
+
+// todo. add negative tests

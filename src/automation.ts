@@ -2,7 +2,7 @@ import {App} from "obsidian";
 import MyPlugin from "./main";
 import {extractAutomationCodeFragments, START_AUTOMATION_CODE_PREFIX} from "./code-fragment-extraction";
 import {BotDefinition, ReadFile} from "./entities";
-import {parseBot} from "./language/parser";
+import {parseBot} from "./language/parsing/bot-lang-parser";
 import {asIndentedString} from "./language/transformation/folding";
 import {debugConfig} from "./debug";
 

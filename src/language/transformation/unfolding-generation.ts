@@ -2,7 +2,7 @@ import {Random} from "../../common/random";
 import {Expr} from "../ast";
 import {unfold} from "./base";
 import {regExpEscape} from "../../common/util";
-import {SPECIAL_CHARS} from "../constants";
+import {SPECIAL_CHARS} from "../parsing/constants";
 
 const SPECIAL_CHAR_REG_EXP = new RegExp("[" + regExpEscape(SPECIAL_CHARS) + "]");
 const MAX_ATOM_LENGTH = 5
