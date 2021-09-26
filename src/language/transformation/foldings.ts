@@ -1,5 +1,5 @@
 import {Expr} from "../ast";
-import {fold} from "./base";
+import {fold} from "./base-definitions";
 
 export function asIndentedString(expr: Expr, fullForm: boolean = false): string {
     const spaces = ".  "

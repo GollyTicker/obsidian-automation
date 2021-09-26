@@ -1,6 +1,6 @@
 import {Random} from "../../common/random";
 import {Expr} from "../ast";
-import {unfold} from "./base";
+import {unfold} from "./base-definitions";
 import {regExpEscape} from "../../common/util";
 import {SPECIAL_CHARS} from "../parsing/constants";
 

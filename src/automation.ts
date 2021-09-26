@@ -3,7 +3,7 @@ import MyPlugin from "./main";
 import {extractAutomationCodeFragments, START_AUTOMATION_CODE_PREFIX} from "./code-fragment-extraction";
 import {BotDefinition, ReadFile} from "./entities";
 import {parseBot} from "./language/parsing/bot-lang-parser";
-import {asIndentedString} from "./language/transformation/folding";
+import {asIndentedString} from "./language/transformation/foldings";
 import {debugConfig} from "./debug";
 
 // @ts-ignore - Global var defs

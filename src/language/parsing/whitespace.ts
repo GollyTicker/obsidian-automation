@@ -1,13 +1,16 @@
 import * as P from "parsimmon";
 import {Parser} from "parsimmon";
-import {BotParser, St, WhiteSpace, withSt} from "./bot-parser";
+import {BotParser, St, withSt} from "./bot-parser";
 
-// We only want to use non newline whitespace
+export type WhiteSpaceType = 'simple' | 'w/newline'
+
+export type MandatoryFlag = 'mandatory' | 'optional'
+
 const mandatorySimpleWhitespace = P.regexp(/[ \t]+/)
+
 const optSimpleWhitespace = P.regexp(/[ \t]*/)
 
-type MandatoryFlag = 'mandatory' | 'optional'
-const spaceParsersMap: { [k in WhiteSpace]: { [f in MandatoryFlag]: Parser<string> } } = {
+const spaceParsersMap: { [k in WhiteSpaceType]: { [f in MandatoryFlag]: Parser<string> } } = {
     'simple': {
         'mandatory': mandatorySimpleWhitespace,
         'optional': optSimpleWhitespace
@@ -18,10 +21,7 @@ const spaceParsersMap: { [k in WhiteSpace]: { [f in MandatoryFlag]: Parser<strin
     }
 }
 
-function whiteSpaceType(st: St): WhiteSpace {
-    return st.bracketDepth >= 1 ? 'w/newline' : 'simple'
-}
-
-export const spaceParser: ((flag: MandatoryFlag) => BotParser<string>) = (flag) => (st: St) => {
-    return spaceParsersMap[whiteSpaceType(st)][flag].map(withSt(st))
-}
+export const spacesParser: ((flag: MandatoryFlag, decider: (st: St) => WhiteSpaceType) => BotParser<string>) =
+    (flag, decider) => (st: St) => {
+        return spaceParsersMap[decider(st)][flag].map(withSt(st))
+    }

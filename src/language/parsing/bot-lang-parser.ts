@@ -1,7 +1,7 @@
 import {BotDefinition} from "../../entities";
 import * as P from "parsimmon";
 import {app, Atom, atom, BotAst, Expr, seq} from "../ast";
-import {spaceParser} from "./whitespace";
+import {spacesParser, WhiteSpaceType} from "./whitespace";
 import {regExpEscape, toPromise} from "../../common/util";
 import {BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, SPECIAL_CHARS} from "./constants";
 import {
@@ -11,11 +11,11 @@ import {
     lazyChainB,
     mapB,
     mapStB,
+    optionalOrElse,
     regexp,
     result,
     run,
     St,
-    succeed,
     surroundB,
     thenB,
     withResultB
@@ -29,7 +29,7 @@ export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
 /*
 * Important Constraints for Parsers:
 * * Each PARSER must consume any prefixing whitespace itself. Suffix whitespace is not of its concern.
-*   To achieve that, preOptSpaceB(parser) can be called
+*   To achieve that, prefixOptSpacesB(parser) can be called
 * * Each PARSER is stateful and is of type BotParser<T> = (state:St) => Parser<[T,St]>.
 *   The state is used to parameterize the parsing. Each parser hands over a (possibly different) state to
 *   its descendents and children.
@@ -37,25 +37,29 @@ export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
 
 // ================ basic definitions ====================
 
-const comma = preOptSpaceB(regexp(new RegExp(regExpEscape(COMMA))))
+function whiteSpaceType(st: St): WhiteSpaceType {
+    return st.bracketDepth >= 1 ? 'w/newline' : 'simple'
+}
 
-const colon = preOptSpaceB(regexp(new RegExp(regExpEscape(COLON))))
+const comma = prefixOptSpacesB(regexp(new RegExp(regExpEscape(COMMA))))
 
-const bracketOpen = preOptSpaceB(
+const colon = prefixOptSpacesB(regexp(new RegExp(regExpEscape(COLON))))
+
+const bracketOpen = prefixOptSpacesB(
     mapStB(
         regexp(new RegExp(regExpEscape(BRACKET_OPEN))),
         bracketDepthModifier(1)
     )
 )
 
-const bracketClose = preOptSpaceB(
+const bracketClose = prefixOptSpacesB(
     mapStB(
         regexp(new RegExp(regExpEscape(BRACKET_CLOSE))),
         bracketDepthModifier(-1)
     )
 )
 
-const argListSeparator = altB(comma, spaceParser('mandatory'))
+const argListSeparator = altB(comma, spacesParser('mandatory', whiteSpaceType))
 
 
 // ======================= main definitions =======================
@@ -64,16 +68,16 @@ const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS) + "\\s"
 
 const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+")
 
-function atomBL(): BotParser<Atom> {
-    return withLogs<Atom>("atom")(preOptSpaceB(mapB(regexp(ATOM), atom)))
-}
+const atomBL: BotParser<Atom> = withLogs<Atom>("atom")(prefixOptSpacesB(
+    mapB(regexp(ATOM), atom)
+))
+
 
 // ( (exprBL) | atomBL | "str" | %exprBL ) (: argListBL)?
 function exprBL(): BotParser<Expr> {
 
     function head(): BotParser<Expr> {
-        return altB<Expr>(
-            atomBL(),
+        return altB<Expr>(atomBL,
             surroundB(bracketOpen, exprBL(), bracketClose)
         )
     }
@@ -83,24 +87,22 @@ function exprBL(): BotParser<Expr> {
             mapB(argListBL(), tl => app(hd, tl))
         )
 
-        let fallBackEmptyList = succeed(hd)
-
-        return altB<Expr>(colonArgList, fallBackEmptyList)
+        return optionalOrElse<Expr>(colonArgList, hd)
     }
 
-    return withLogs<Expr>("expr")(preOptSpaceB(lazyChainB(head, optColonPrefixedArgList)))
+    return withLogs<Expr>("expr")(prefixOptSpacesB(
+        lazyChainB(head, optColonPrefixedArgList)
+    ))
 }
 
 function argListBL(): BotParser<Expr[]> {
-    return withLogs<Expr[]>("argList")(
-        seqByRightAssocB(
-            exprBL(),
-            [
-                {sep: colon, combiner: (x: Expr, xs: Expr[]) => [app(x, xs)]},
-                {sep: argListSeparator, combiner: (x: Expr, xs: Expr[]) => [x].concat(xs)}
-            ]
-        )
-    )
+    return withLogs<Expr[]>("argList")(seqByRightAssocB(
+        exprBL(),
+        [
+            {sep: colon, combiner: (x: Expr, xs: Expr[]) => [app(x, xs)]},
+            {sep: argListSeparator, combiner: (x: Expr, xs: Expr[]) => [x].concat(xs)}
+        ]
+    ))
 }
 
 // ================= BotLang entrypoint ===================
@@ -121,8 +123,8 @@ function bracketDepthModifier(i: number): (st: St) => St {
     return (st) => ({...st, bracketDepth: st.bracketDepth + i})
 }
 
-function preOptSpaceB<T>(parser: BotParser<T>): BotParser<T> {
-    return thenB(spaceParser('optional'), parser)
+function prefixOptSpacesB<T>(parser: BotParser<T>): BotParser<T> {
+    return thenB(spacesParser('optional', whiteSpaceType), parser)
 }
 
 type Combiner<A> = (head: A, tail: A[]) => A[]
@@ -137,8 +139,6 @@ function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { sep: BotParser<st
             })
         )
 
-    const fallbackEmptyList = succeed([])
-
     const anySepParser = altB(...indexed.map(o => o.sepi))
 
     function parseSepAndTailAndCombineWith(head: A, recursiveTailParser: () => BotParser<A[]>): BotParser<A[]> {
@@ -152,15 +152,14 @@ function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { sep: BotParser<st
     }
 
     function recursiveRightAssociativeParser(): BotParser<A[]> {
-        return altB(
-            chainB(elt, head =>
-                altB(
-                    parseSepAndTailAndCombineWith(head, recursiveRightAssociativeParser),
-                    succeed([head])
-                )
-            ),
-            fallbackEmptyList
+        const list = chainB(elt, head =>
+            optionalOrElse(
+                parseSepAndTailAndCombineWith(head, recursiveRightAssociativeParser),
+                [head]
+            )
         )
+
+        return optionalOrElse(list, [])
     }
 
     return recursiveRightAssociativeParser()

@@ -1,9 +1,9 @@
 import {app, atom} from "../ast";
 import {assert, test} from "../../tester/tester";
 import {random} from "../../common/random";
-import {fold} from "./base";
-import {asCodeString, asIndentedString} from "./folding";
-import {fromRandom} from "./unfolding-generation";
+import {fold} from "./base-definitions";
+import {asCodeString, asIndentedString} from "./foldings";
+import {fromRandom} from "./unfoldings";
 
 export const add = 0;
 
