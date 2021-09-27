@@ -7,6 +7,6 @@ when: calc: "plus" , "a,dvs \nsfS32fr=W%ra"
 when: calc: "plus" ,"a,dvs \nsfS32fr=W%ra"
 when: calc: "pls
 	t\\
-nl
+nl\"
 "
 ```

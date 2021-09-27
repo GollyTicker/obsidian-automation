@@ -3,7 +3,7 @@ import * as P from "parsimmon";
 import {app, Atom, atom, BotAst, Expr, seq, str, Str} from "../ast";
 import {spacesParser, WhiteSpaceType} from "./whitespace";
 import {regExpEscape, toPromise} from "../../common/util";
-import {BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, DOUBLE_QUOTE, SPECIAL_CHARS} from "./constants";
+import {BACKSLASH, BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, DOUBLE_QUOTE, SPECIAL_CHARS} from "./constants";
 import {
     altB,
     BotParser,
@@ -22,7 +22,7 @@ import {
 } from "./bot-parser";
 import {withLogs} from "./debug";
 import {$$} from "../../utils";
-import {strLiteral} from "./string";
+import {toLiteral} from "./string";
 
 export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
     return toPromise(BotLang.botDefinition.parse(botDef.code), botDef.code)
@@ -74,17 +74,19 @@ const atomBL: BotParser<Atom> = withLogs<Atom>("atom")(prefixOptSpacesB(
     $$(regexp(ATOM), mapB, atom)
 ))
 
-const STRING_BREAKER_REG_EXP_PART = regExpEscape(DOUBLE_QUOTE)
+const STRING_BREAKER = regExpEscape(DOUBLE_QUOTE)
+const STRING_ESCAPED_QUOTE = regExpEscape(BACKSLASH + DOUBLE_QUOTE)
 
-const STRING = new RegExp("[^" + STRING_BREAKER_REG_EXP_PART + "]*")
+const STRING = new RegExp(
+    "(" + STRING_ESCAPED_QUOTE + "|[^" + STRING_BREAKER + "])*"
+)
 
-// todo. add escaping next for "
 const stringBL: BotParser<Str> = prefixOptSpacesB($$(
     surroundB(doubleQuote,
         regexp(STRING),
         doubleQuote),
     mapB,
-    (x: string) => str(strLiteral(x))
+    (x: string) => str(toLiteral(x))
 ))
 
 

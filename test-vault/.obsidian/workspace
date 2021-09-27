@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "debug.md",
+            "file": "Parser test cases.md",
             "mode": "source"
           }
         }
@@ -68,7 +68,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "debug.md",
+                "file": "Parser test cases.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -88,8 +88,8 @@
   },
   "active": "9ea40ae0d0b3093e",
   "lastOpenFiles": [
-    "debug.md",
     "Parser test cases.md",
+    "debug.md",
     "Main Page Content Definition.md",
     "README.md",
     "Note 1.md",

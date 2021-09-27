@@ -53,7 +53,7 @@ test("parser parses test expressions", () => {
         'when: calc: "plus" ,"a,dvs \\nsfS32fr=W%ra"\n' +
         'when: calc: "pls\n' +
         '\tt\\\\\n' +
-        'nl\n' + // \" escaping not  supported yet
+        'nl\\"\n' +
         '"'
         //
         // "when: (calc: plus), a, a\n" +
