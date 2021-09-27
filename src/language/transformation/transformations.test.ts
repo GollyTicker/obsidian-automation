@@ -9,7 +9,7 @@ export const add = 0;
 
 test("fold works", () => {
     const ast = atom("sdfsd")
-    const left = fold<number>(x => x.length, () => 0, ast)
+    const left = fold<number>(x => x.length, () => 2, () => 1, () => 0, ast)
     assert(left === 5, left, 5)
 })
 
@@ -24,11 +24,11 @@ test("showcase indented string", () => {
     ]
 
     asts.forEach(ast => {
-        console.log(asIndentedString(ast, false));
+        console.log(asIndentedString(ast, undefined, false));
     })
 
     asts.forEach(ast => {
-        console.log(asIndentedString(ast, true));
+        console.log(asIndentedString(ast, undefined, true));
     })
 })
 
@@ -39,6 +39,7 @@ test("showcase AST generation", () => {
                 fromRandom(
                     random("2qc3" + i)
                 ),
+                undefined,
                 true
             )
         );

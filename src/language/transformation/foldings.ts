@@ -1,11 +1,17 @@
 import {Expr} from "../ast";
 import {fold} from "./base-definitions";
 
-export function asIndentedString(expr: Expr, fullForm: boolean = false): string {
+export function asIndentedString(
+    expr: Expr,
+    dataStr: (x: any) => string = (x) => x.toString(),
+    fullForm: boolean = false
+): string {
     const spaces = ".  "
     const indentAfterFirstNewline = (str: string) => str.replace(/\n/g, "\n" + spaces)
     return fold(
         (s) => fullForm ? "Atom(" + s + ")" : "(" + s + ")",
+        (x) => `"${escape(x)}"`,
+        (data) => fullForm ? "Data(" + dataStr(data) + ")" : "#(" + dataStr(data) + ")",
         (head, tail) => {
             const indented = "h  " + indentAfterFirstNewline(head) + "\nt  " + indentAfterFirstNewline(tail.join("\n"))
             const bracketed = `(${head}): ${tail.map(x => '(' + x + ')').join(',')}`
@@ -15,9 +21,15 @@ export function asIndentedString(expr: Expr, fullForm: boolean = false): string 
     );
 }
 
-export function asCodeString(expr: Expr): string {
+
+export function asCodeString(
+    expr: Expr,
+    dataStr: (x: any) => string = (x) => x.toString()
+): string {
     return fold(
         (s) => s,
+        (x) => `"${escape(x)}"`,
+        dataStr,
         (head, tail) =>
             "(" + head + "): " + "(" + tail.join("), (") + ")",
         expr

@@ -6,16 +6,19 @@ import {SPECIAL_CHARS} from "../parsing/constants";
 
 const SPECIAL_CHAR_REG_EXP = new RegExp("[" + regExpEscape(SPECIAL_CHARS) + "]");
 const MAX_ATOM_LENGTH = 5
+const MAX_STRING_LENGTH = 5
+const MAX_DATA_STRING_LENGTH = 5
 const MAX_APP_TAIL_LENGTH = 3
 const MAX_DEPTH = 3
 
 export function fromRandom(source: Random): Expr {
     type St = { src: Random, depth: number }
 
-    function genAtom(src: Random): string {
-        return src
-            .string(src.intBetween(1, MAX_ATOM_LENGTH))
-            .replace(SPECIAL_CHAR_REG_EXP, "_")
+    function genAtom(src: Random): { a: string } {
+        return {
+            a: src.string(src.intBetween(1, MAX_ATOM_LENGTH))
+                .replace(SPECIAL_CHAR_REG_EXP, "_")
+        }
     }
 
     function genApp({src, depth}: St): { h: St, t: St[] } {
@@ -26,9 +29,22 @@ export function fromRandom(source: Random): Expr {
         }
     }
 
+    function genData(src: Random): { d: any } {
+        return {d: src.string(src.range(MAX_DATA_STRING_LENGTH))}
+    }
+
+    function genStr(src: Random): { s: string } {
+        return {s: src.string(src.range(MAX_STRING_LENGTH))}
+    }
+
     return unfold<St>(({src, depth}: St) => {
-            if (depth >= MAX_DEPTH || src.boolean()) {
+            const i = src.intBetween(1, 15)
+            if (depth >= MAX_DEPTH || i <= 2) {
                 return genAtom(src)
+            } else if (i <= 5) {
+                return genData(src)
+            } else if (i <= 7) {
+                return genStr(src)
             } else {
                 return genApp({src, depth})
             }

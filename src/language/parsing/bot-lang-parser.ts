@@ -1,6 +1,6 @@
 import {BotDefinition} from "../../entities";
 import * as P from "parsimmon";
-import {app, Atom, atom, BotAst, Expr, seq} from "../ast";
+import {app, Atom, atom, BotAst, Data, Expr, seq} from "../ast";
 import {spacesParser, WhiteSpaceType} from "./whitespace";
 import {regExpEscape, toPromise} from "../../common/util";
 import {BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, SPECIAL_CHARS} from "./constants";
@@ -8,6 +8,7 @@ import {
     altB,
     BotParser,
     chainB,
+    fromSimple,
     lazyChainB,
     mapB,
     mapStB,
@@ -72,13 +73,17 @@ const atomBL: BotParser<Atom> = withLogs<Atom>("atom")(prefixOptSpacesB(
     mapB(regexp(ATOM), atom)
 ))
 
+const stringBL: BotParser<Data> = fromSimple(P.fail("todo"))
+
 
 // ( (exprBL) | atomBL | "str" | %exprBL ) (: argListBL)?
 function exprBL(): BotParser<Expr> {
 
     function head(): BotParser<Expr> {
-        return altB<Expr>(atomBL,
-            surroundB(bracketOpen, exprBL(), bracketClose)
+        return altB<Expr>(
+            atomBL,
+            surroundB(bracketOpen, exprBL(), bracketClose),
+            stringBL
         )
     }
 

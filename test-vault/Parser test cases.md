@@ -86,14 +86,14 @@ prefixing an expression with `%` turns it into an AST-interpoplation. its equiva
 
 ```oa
 when: calc: plus, %a, var: b
-become: js-eval: %"a + b"
+become: js-eval: %"%a + %b"
 ```
 
 `%` inside AST-interpolation is registered as variable substitution
 
 ```oa
 when: calc: plus, %a, %b
-become: js-eval: %"%a + %b"
+become: js-eval: %"%a + b"
 ```
 
 ```oa

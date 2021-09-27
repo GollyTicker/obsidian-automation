@@ -1,10 +1,8 @@
-import {XOR} from "ts-xor";
-
 export type BotAst = Seq
 
-export type Expr = XOR<Atom, App>
+export abstract class Expr {
 
-export abstract class AstNode {
+    abstract type: 'Atom' | 'Data' | 'App' | 'Str'
 
     public toString(): string {
         // @ts-ignore
@@ -12,14 +10,36 @@ export abstract class AstNode {
     }
 }
 
-export class Atom extends AstNode {
+export class Atom extends Expr {
+    type: 'Atom' = 'Atom'
+
     constructor(public readonly name: string) {
         super()
     }
 }
 
+export class Str extends Expr {
+    type: 'Str' = 'Str'
+
+    constructor(public readonly str: string) {
+        super();
+    }
+}
+
+// generic container for any data in memory without any direct way
+// to express it as a string
+export class Data extends Expr {
+    type: 'Data' = 'Data'
+
+    constructor(public readonly data: any) {
+        super();
+    }
+}
+
 // todo. hm.... if we simplify head and tail to a list... then we get LISP!
-export class App extends AstNode {
+export class App extends Expr {
+    type: 'App' = 'App'
+
     // its recommended to use atoms as heads to decrease mental burden
     constructor(public readonly head: Expr, public readonly tail: Expr[]) {
         super()
@@ -34,6 +54,8 @@ export class Seq extends App {
 }
 
 export const atom = (name: string) => new Atom(name);
+export const data = (data: any) => new Data(data);
+export const str = (x: string) => new Str(x);
 export const app = (head: Expr, tail: Expr[]) => new App(head, tail);
 
 export const SEQUENCE = atom("sequence")

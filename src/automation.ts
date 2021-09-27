@@ -34,7 +34,7 @@ export async function testAutomation(plugin: MyPlugin) {
     const parsedExpressions = botDefinitions.map(botDef => parseBot(botDef).then(ast => ({...botDef, ast: ast})))
 
     parsedExpressions.forEach(pro => pro
-        .then(bot => console.log("Parsed OK - " + bot.fl.name + "\n" + asIndentedString(bot.ast, true)))
+        .then(bot => console.log("Parsed OK - " + bot.fl.name + "\n" + asIndentedString(bot.ast, undefined, true)))
         .catch(err => console.log("Parsed FAIL: ", err))
     )
 }
