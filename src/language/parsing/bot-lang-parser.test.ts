@@ -44,7 +44,17 @@ test("parser parses test expressions", () => {
         "s\n" +
         "d s\n" +
         ")\n" +
-        "become: js-eval: something"
+        "become: js-eval: something",
+
+        'when: calc: "plus", "a,dvs \\nsfS32fr=W%ra"\n' +
+        'a: 000000011111111112\n' +
+        'a: 345678901234567890\n' +
+        'when: calc: "plus" , "a,dvs \\nsfS32fr=W%ra"\n' +
+        'when: calc: "plus" ,"a,dvs \\nsfS32fr=W%ra"\n' +
+        'when: calc: "pls\n' +
+        '\tt\\\\\n' +
+        'nl\n' + // \" escaping not  supported yet
+        '"'
         //
         // "when: (calc: plus), a, a\n" +
         // "become: js-eval: something",

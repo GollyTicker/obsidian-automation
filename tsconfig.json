@@ -23,7 +23,8 @@
       "dom",
       "es5",
       "scripthost",
-      "es2020"
+      "es2020",
+      "ESNext.String"
     ]
   },
   "include": [

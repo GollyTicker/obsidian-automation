@@ -78,7 +78,7 @@ become: js-eval: something
 strings
 
 ```oa
-when: calc: "plus", "a,dvs sfS32fr=W%ra"
+when: calc: "plus", "a,dvs \nsfS32fr=W%ra"
 become: js-eval: something
 ```
 

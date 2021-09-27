@@ -1,22 +1,28 @@
-const JAVASCRIPT_STRING_ESCAPES = [
+export const JAVASCRIPT_BASIC_ESCAPES = [
     ["\'", "\\\'"],
     ["\"", "\\\""],
-    ["\\", "\\\\"],
-    ["\n", "\\n"],
-    ["\r", "\\r"],
-    ["\t", "\\t"],
+    ["\\", "\\\\"]
 ]
 
-function escape(literal: string): string {
+export const JAVASCRIPT_CONTROL_CHARACTER_ESCAPES = [
+    ["\n", "\\n"],
+    ["\r", "\\r"],
+    ["\t", "\\t"]
+]
+
+export const JAVASCRIPT_STRING_ESCAPES =
+    JAVASCRIPT_BASIC_ESCAPES.concat(JAVASCRIPT_CONTROL_CHARACTER_ESCAPES)
+
+export function strEscape(literal: string): string {
     JAVASCRIPT_STRING_ESCAPES.forEach(([lit, esc]) => {
-        literal = literal.replace(lit, esc)
+        literal = literal.replaceAll(lit, esc)
     })
     return literal
 }
 
-function literal(escaped: string): string {
+export function strLiteral(escaped: string): string {
     JAVASCRIPT_STRING_ESCAPES.forEach(([lit, esc]) => {
-        escaped = escaped.replace(esc, lit)
+        escaped = escaped.replaceAll(esc, lit)
     })
     return escaped
 }

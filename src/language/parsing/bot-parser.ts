@@ -29,13 +29,10 @@ export function regexp(r: RegExp): BotParser<string> {
 
 // =========== work with the result or the state =============
 
-export function run<T>(p: BotParser<T>): (st: St) => Parser<[T, St]> {
-    return (st) => p(st)
+export function runWith<T>(p: BotParser<T>, st: St): Parser<[T, St]> {
+    return p(st)
 }
 
-export function runWith<T>(st: St): (p: BotParser<T>) => Parser<[T, St]> {
-    return (p) => p(st)
-}
 
 export function result<T>(parsed: [T, St]): T {
     return parsed[0]

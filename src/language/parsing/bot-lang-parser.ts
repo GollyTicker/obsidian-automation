@@ -1,27 +1,28 @@
 import {BotDefinition} from "../../entities";
 import * as P from "parsimmon";
-import {app, Atom, atom, BotAst, Data, Expr, seq} from "../ast";
+import {app, Atom, atom, BotAst, Expr, seq, str, Str} from "../ast";
 import {spacesParser, WhiteSpaceType} from "./whitespace";
 import {regExpEscape, toPromise} from "../../common/util";
-import {BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, SPECIAL_CHARS} from "./constants";
+import {BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, DOUBLE_QUOTE, SPECIAL_CHARS} from "./constants";
 import {
     altB,
     BotParser,
     chainB,
-    fromSimple,
     lazyChainB,
     mapB,
     mapStB,
     optionalOrElse,
     regexp,
     result,
-    run,
+    runWith,
     St,
     surroundB,
     thenB,
     withResultB
 } from "./bot-parser";
 import {withLogs} from "./debug";
+import {$$} from "../../utils";
+import {strLiteral} from "./string";
 
 export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
     return toPromise(BotLang.botDefinition.parse(botDef.code), botDef.code)
@@ -46,19 +47,19 @@ const comma = prefixOptSpacesB(regexp(new RegExp(regExpEscape(COMMA))))
 
 const colon = prefixOptSpacesB(regexp(new RegExp(regExpEscape(COLON))))
 
-const bracketOpen = prefixOptSpacesB(
-    mapStB(
-        regexp(new RegExp(regExpEscape(BRACKET_OPEN))),
-        bracketDepthModifier(1)
-    )
-)
+const doubleQuote = regexp(new RegExp(regExpEscape(DOUBLE_QUOTE)))
 
-const bracketClose = prefixOptSpacesB(
-    mapStB(
-        regexp(new RegExp(regExpEscape(BRACKET_CLOSE))),
-        bracketDepthModifier(-1)
-    )
-)
+const bracketOpen = prefixOptSpacesB($$(
+    regexp(new RegExp(regExpEscape(BRACKET_OPEN))),
+    mapStB,
+    bracketDepthModifier(1)
+))
+
+const bracketClose = prefixOptSpacesB($$(
+    regexp(new RegExp(regExpEscape(BRACKET_CLOSE))),
+    mapStB,
+    bracketDepthModifier(-1)
+))
 
 const argListSeparator = altB(comma, spacesParser('mandatory', whiteSpaceType))
 
@@ -70,10 +71,21 @@ const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS) + "\\s"
 const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+")
 
 const atomBL: BotParser<Atom> = withLogs<Atom>("atom")(prefixOptSpacesB(
-    mapB(regexp(ATOM), atom)
+    $$(regexp(ATOM), mapB, atom)
 ))
 
-const stringBL: BotParser<Data> = fromSimple(P.fail("todo"))
+const STRING_BREAKER_REG_EXP_PART = regExpEscape(DOUBLE_QUOTE)
+
+const STRING = new RegExp("[^" + STRING_BREAKER_REG_EXP_PART + "]*")
+
+// todo. add escaping next for "
+const stringBL: BotParser<Str> = prefixOptSpacesB($$(
+    surroundB(doubleQuote,
+        regexp(STRING),
+        doubleQuote),
+    mapB,
+    (x: string) => str(strLiteral(x))
+))
 
 
 // ( (exprBL) | atomBL | "str" | %exprBL ) (: argListBL)?
@@ -88,37 +100,39 @@ function exprBL(): BotParser<Expr> {
     }
 
     const optColonPrefixedArgList = (hd: Expr) => {
-        const colonArgList = thenB(colon,
-            mapB(argListBL(), tl => app(hd, tl))
+        const colonArgList = $$(colon, thenB,
+            $$(argListBL(), mapB, (tl: Expr[]) => app(hd, tl))
         )
 
-        return optionalOrElse<Expr>(colonArgList, hd)
+        return $$(colonArgList, optionalOrElse, hd)
     }
 
     return withLogs<Expr>("expr")(prefixOptSpacesB(
-        lazyChainB(head, optColonPrefixedArgList)
+        $$(head, lazyChainB, optColonPrefixedArgList)
     ))
 }
 
-function argListBL(): BotParser<Expr[]> {
-    return withLogs<Expr[]>("argList")(seqByRightAssocB(
+const argListBL: () => BotParser<Expr[]> = () => withLogs<Expr[]>("argList")(
+    seqByRightAssocB(
         exprBL(),
         [
             {sep: colon, combiner: (x: Expr, xs: Expr[]) => [app(x, xs)]},
             {sep: argListSeparator, combiner: (x: Expr, xs: Expr[]) => [x].concat(xs)}
         ]
-    ))
-}
+    )
+)
 
 // ================= BotLang entrypoint ===================
 
 const initialState: St = {bracketDepth: 0}
 
 export const BotLang = P.createLanguage<{ botDefinition: BotAst }>({
-    botDefinition: () =>
-        P.sepBy(run(exprBL())(initialState).map(result), P.optWhitespace)
+    botDefinition: () => {
+        const expressionParser = $$(exprBL(), runWith, initialState).map(result)
+        return P.sepBy(expressionParser, P.optWhitespace)
             .skip(P.end)
             .map(seq)
+    }
 })
 
 
@@ -129,7 +143,7 @@ function bracketDepthModifier(i: number): (st: St) => St {
 }
 
 function prefixOptSpacesB<T>(parser: BotParser<T>): BotParser<T> {
-    return thenB(spacesParser('optional', whiteSpaceType), parser)
+    return $$(spacesParser('optional', whiteSpaceType), thenB, parser)
 }
 
 type Combiner<A> = (head: A, tail: A[]) => A[]
@@ -149,22 +163,24 @@ function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { sep: BotParser<st
     function parseSepAndTailAndCombineWith(head: A, recursiveTailParser: () => BotParser<A[]>): BotParser<A[]> {
         return chainB(
             anySepParser,
-            (i) => mapB(
+            (i) => $$(
                 recursiveTailParser(),
-                tail => indexed[i].combiner(head, tail)
+                mapB,
+                (tail: A[]) => indexed[i].combiner(head, tail)
             )
         )
     }
 
     function recursiveRightAssociativeParser(): BotParser<A[]> {
-        const list = chainB(elt, head =>
-            optionalOrElse(
+        const list = $$(elt, chainB, (head: A) =>
+            $$(
                 parseSepAndTailAndCombineWith(head, recursiveRightAssociativeParser),
+                optionalOrElse,
                 [head]
             )
         )
 
-        return optionalOrElse(list, [])
+        return $$(list, optionalOrElse, [])
     }
 
     return recursiveRightAssociativeParser()
