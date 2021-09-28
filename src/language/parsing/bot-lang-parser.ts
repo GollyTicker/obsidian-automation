@@ -92,7 +92,8 @@ const STRING = new RegExp(
     "(" + STRING_ESCAPED_QUOTE + "|[^" + STRING_BREAKER + "])*"
 )
 
-// todo. we don't need interpolating regimes for parsing. we only need them for evaluation
+// todo. we need interpolation regimes, so that we can properly parse a % string as either
+// var or as a normal string.
 
 // todo. write interpolating variant of string
 const stringBL: BotParser<Str> = prefixOptSpacesB($$(
