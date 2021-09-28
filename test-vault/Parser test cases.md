@@ -89,6 +89,11 @@ when: calc: plus, %a, var: b
 become: js-eval: %"%a + %b"
 ```
 
+```oa
+when: calc: plus, %a, var: b
+become: js-eval: %"%(a: b) + %b"
+```
+
 `%` inside AST-interpolation is registered as variable substitution
 
 ```oa

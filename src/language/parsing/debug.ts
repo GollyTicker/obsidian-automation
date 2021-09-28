@@ -14,13 +14,17 @@ function debugLog<T>(str: string): (m: Mark<T>) => Parser<T> {
 // debugging function.
 // @ts-ignore
 function recordAttempt<T>(str: string): (p: BotParser<T>) => BotParser<T> {
-    return (p) => (st: St) => P.succeed('').mark().chain(debugLog("Attempt: " + str?.toString())).then(p(st))
+    return (p) => (st: St) => P.succeed('').mark().chain(
+        debugLog("Attempt: " + str?.toString() + ", depth: " + st.expressionDepth)
+    ).then(p(st))
 }
 
 // debugging function.
 // @ts-ignore
 function recordSuccess<T>(str: string): (p: BotParser<T>) => BotParser<T> {
-    return (p) => (st: St) => p(st).mark().chain(debugLog("Success: " + str?.toString()))
+    return (p) => (st: St) => p(st).mark().chain(
+        debugLog("Success: " + str?.toString() + ", depth: " + st.expressionDepth)
+    )
 }
 
 // debugging function.

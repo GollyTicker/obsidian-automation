@@ -46,6 +46,12 @@ test("parser parses test expressions", () => {
         ")\n" +
         "become: js-eval: something",
 
+        "when: (calc: plus), a, a\n" +
+        "become: js-eval: something",
+
+        "when: calc: \"plus\", \"a,dvs sfS32fr=W%ra\"\n" +
+        "become: js-eval: something",
+
         'when: calc: "plus", "a,dvs \\nsfS32fr=W%ra"\n' +
         'a: 000000011111111112\n' +
         'a: 345678901234567890\n' +
@@ -54,20 +60,28 @@ test("parser parses test expressions", () => {
         'when: calc: "pls\n' +
         '\tt\\\\\n' +
         'nl\\"\n' +
-        '"'
-        //
-        // "when: (calc: plus), a, a\n" +
-        // "become: js-eval: something",
+        '"',
 
-        // "when: calc: \"plus\", \"a,dvs sfS32fr=W%ra\"\n" +
-        // "become: js-eval: something",
-        //
-        // "when: calc: plus, %a, var: b\n" +
-        // "become: js-eval: %\"a + b\""
+        "when: calc: plus, %a, var: b\n" +
+        "become: js-eval: %\"%a + b\"",
+
+        "when: calc: plus, %a, var: b\n" +
+        "become: js-eval: %\"%a + %b\"",
+
+        "when: calc: plus, %a, var: b\n" +
+        "become: js-eval: %\"%(a: b) + %b\"",
+
+        "when: calc: plus, %a, %b\n" +
+        "become: js-eval: %\"%a + b\"",
+
+        "associations: (a: 3, b: 5)\n" +
+        "js-eval: %\"%a + %b\"",
+
+        "sequence: (when: %pattern), (become: %expr)"
     ]
     codes.forEach(code => BotLang.botDefinition.tryParse(code))
 })
 
-// todo. actually test the created note
+// todo. add tests which test for ast structure
 
 // todo. add negative tests

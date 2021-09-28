@@ -1,3 +1,6 @@
+import _ from "lodash";
+import {$$} from "../utils";
+
 export type BotAst = Seq
 
 export abstract class Expr {
@@ -15,6 +18,11 @@ export class Atom extends Expr {
 
     constructor(public readonly name: string) {
         super()
+    }
+
+    public specialSyntaxAtom(): boolean {
+        return $$(this, exprEquals, VAR_ATOM) ||
+            $$(this, exprEquals, SEQUENCE_ATOM)
     }
 }
 
@@ -58,5 +66,11 @@ export const data = (data: any) => new Data(data);
 export const str = (x: string) => new Str(x);
 export const app = (head: Expr, tail: Expr[]) => new App(head, tail);
 
-export const SEQUENCE = atom("sequence")
-export const seq = (exprs: Expr[]) => new App(SEQUENCE, exprs);
+export const VAR_ATOM = atom("var")
+export const SEQUENCE_ATOM = atom("sequence")
+
+export const seq = (exprs: Expr[]) => new App(SEQUENCE_ATOM, exprs);
+
+export function exprEquals(l: Expr, r: Expr): boolean {
+    return _.isEqual(r, l)
+}

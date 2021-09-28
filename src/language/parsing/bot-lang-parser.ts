@@ -1,9 +1,9 @@
 import {BotDefinition} from "../../entities";
 import * as P from "parsimmon";
-import {app, Atom, atom, BotAst, Expr, seq, str, Str} from "../ast";
+import {app, Atom, atom, BotAst, Expr, exprEquals, seq, str, Str, VAR_ATOM} from "../ast";
 import {spacesParser, WhiteSpaceType} from "./whitespace";
 import {regExpEscape, toPromise} from "../../common/util";
-import {BACKSLASH, BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, DOUBLE_QUOTE, SPECIAL_CHARS} from "./constants";
+import {BACKSLASH, BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, DOUBLE_QUOTE, PERCENT, SPECIAL_CHARS} from "./constants";
 import {
     altB,
     BotParser,
@@ -11,6 +11,7 @@ import {
     lazyChainB,
     mapB,
     mapStB,
+    onSt,
     optionalOrElse,
     regexp,
     result,
@@ -39,13 +40,19 @@ export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
 
 // ================ basic definitions ====================
 
-function whiteSpaceType(st: St): WhiteSpaceType {
-    return st.bracketDepth >= 1 ? 'w/newline' : 'simple'
-}
-
 const comma = prefixOptSpacesB(regexp(new RegExp(regExpEscape(COMMA))))
 
-const colon = prefixOptSpacesB(regexp(new RegExp(regExpEscape(COLON))))
+const percent = prefixOptSpacesB($$(
+    regexp(new RegExp(PERCENT)),
+    mapStB,
+    encounteredVarPercent
+))
+
+const colon = (hd: Expr) => prefixOptSpacesB($$(
+    regexp(new RegExp(regExpEscape(COLON))),
+    mapStB,
+    (st: St) => $$(hd, exprEquals, VAR_ATOM) ? encounteredVarPercent(st) : st
+))
 
 const doubleQuote = regexp(new RegExp(regExpEscape(DOUBLE_QUOTE)))
 
@@ -60,6 +67,10 @@ const bracketClose = prefixOptSpacesB($$(
     mapStB,
     bracketDepthModifier(-1)
 ))
+
+function whiteSpaceType(st: St): WhiteSpaceType {
+    return st.bracketDepth >= 1 ? 'w/newline' : 'simple'
+}
 
 const argListSeparator = altB(comma, spacesParser('mandatory', whiteSpaceType))
 
@@ -81,28 +92,34 @@ const STRING = new RegExp(
     "(" + STRING_ESCAPED_QUOTE + "|[^" + STRING_BREAKER + "])*"
 )
 
+// todo. we don't need interpolating regimes for parsing. we only need them for evaluation
+
+// todo. write interpolating variant of string
 const stringBL: BotParser<Str> = prefixOptSpacesB($$(
-    surroundB(doubleQuote,
-        regexp(STRING),
-        doubleQuote),
+    surroundB(doubleQuote, regexp(STRING), doubleQuote),
     mapB,
     (x: string) => str(toLiteral(x))
 ))
-
 
 // ( (exprBL) | atomBL | "str" | %exprBL ) (: argListBL)?
 function exprBL(): BotParser<Expr> {
 
     function head(): BotParser<Expr> {
-        return altB<Expr>(
+        const nonInterpolatingExpr = altB<Expr>(
             atomBL,
             surroundB(bracketOpen, exprBL(), bracketClose),
-            stringBL
+            stringBL,
         )
+        const interpolatingExpr = exprDepthIncreaserB($$(
+            percent,
+            thenB,
+            $$(nonInterpolatingExpr, mapB, (e: Expr) => app(VAR_ATOM, [e]))
+        ))
+        return altB(interpolatingExpr, nonInterpolatingExpr)
     }
 
     const optColonPrefixedArgList = (hd: Expr) => {
-        const colonArgList = $$(colon, thenB,
+        const colonArgList = $$(colon(hd), thenB,
             $$(argListBL(), mapB, (tl: Expr[]) => app(hd, tl))
         )
 
@@ -110,7 +127,9 @@ function exprBL(): BotParser<Expr> {
     }
 
     return withLogs<Expr>("expr")(prefixOptSpacesB(
-        $$(head, lazyChainB, optColonPrefixedArgList)
+        exprDepthIncreaserB(
+            $$(head, lazyChainB, optColonPrefixedArgList)
+        )
     ))
 }
 
@@ -119,14 +138,18 @@ const argListBL: () => BotParser<Expr[]> = () => withLogs<Expr[]>("argList")(
         exprBL(),
         [
             {sep: colon, combiner: (x: Expr, xs: Expr[]) => [app(x, xs)]},
-            {sep: argListSeparator, combiner: (x: Expr, xs: Expr[]) => [x].concat(xs)}
+            {sep: () => argListSeparator, combiner: (x: Expr, xs: Expr[]) => [x].concat(xs)}
         ]
     )
 )
 
 // ================= BotLang entrypoint ===================
 
-const initialState: St = {bracketDepth: 0}
+const initialState: St = {
+    bracketDepth: 0,
+    expressionDepth: 0,
+    interpolationRegimes: []
+}
 
 export const BotLang = P.createLanguage<{ botDefinition: BotAst }>({
     botDefinition: () => {
@@ -144,43 +167,60 @@ function bracketDepthModifier(i: number): (st: St) => St {
     return (st) => ({...st, bracketDepth: st.bracketDepth + i})
 }
 
+function encounteredVarPercent(st: St): St {
+    return {...st, interpolationRegimes: st.interpolationRegimes.concat([st.expressionDepth])}
+}
+
+function ensureActiveInterpolationRegimesConstraint(st: St): St {
+    return {...st, interpolationRegimes: st.interpolationRegimes.filter((itpDepth) => itpDepth <= st.expressionDepth)}
+}
+
+function exprDepthModifier(i: number): (st: St) => St {
+    return (st) => ensureActiveInterpolationRegimesConstraint(
+        {...st, expressionDepth: st.expressionDepth + i}
+    )
+}
+
+function exprDepthIncreaserB<T>(parser: BotParser<T>): BotParser<T> {
+    return surroundB(
+        onSt(exprDepthModifier(1)),
+        parser,
+        onSt(exprDepthModifier(-1))
+    )
+}
+
 function prefixOptSpacesB<T>(parser: BotParser<T>): BotParser<T> {
     return $$(spacesParser('optional', whiteSpaceType), thenB, parser)
 }
 
 type Combiner<A> = (head: A, tail: A[]) => A[]
 
-function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { sep: BotParser<string>, combiner: Combiner<A> }[]): BotParser<A[]> {
+function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { sep: (h: A) => BotParser<string>, combiner: Combiner<A> }[]): BotParser<A[]> {
 
-    const indexed: { sepi: BotParser<number>, combiner: Combiner<A> }[] =
+    const indexed: { sepi: (h: A) => BotParser<number>, combiner: Combiner<A> }[] =
         sepCombiner.map((obj, i) =>
             ({
-                sepi: withResultB(obj.sep, i),
+                sepi: (h) => withResultB(obj.sep(h), i),
                 combiner: obj.combiner
             })
         )
 
-    const anySepParser = altB(...indexed.map(o => o.sepi))
+    const anySepParser = (head: A) => altB(...indexed.map(o => o.sepi(head)))
 
     function parseSepAndTailAndCombineWith(head: A, recursiveTailParser: () => BotParser<A[]>): BotParser<A[]> {
-        return chainB(
-            anySepParser,
-            (i) => $$(
-                recursiveTailParser(),
-                mapB,
-                (tail: A[]) => indexed[i].combiner(head, tail)
-            )
-        )
+        return $$(anySepParser(head), chainB, (i: number) => $$(
+            recursiveTailParser(),
+            mapB,
+            (tail: A[]) => indexed[i].combiner(head, tail)
+        ))
     }
 
     function recursiveRightAssociativeParser(): BotParser<A[]> {
-        const list = $$(elt, chainB, (head: A) =>
-            $$(
-                parseSepAndTailAndCombineWith(head, recursiveRightAssociativeParser),
-                optionalOrElse,
-                [head]
-            )
-        )
+        const list = $$(elt, chainB, (head: A) => $$(
+            parseSepAndTailAndCombineWith(head, recursiveRightAssociativeParser),
+            optionalOrElse,
+            [head]
+        ))
 
         return $$(list, optionalOrElse, [])
     }
