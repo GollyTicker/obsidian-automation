@@ -1,4 +1,3 @@
-// debugging function. Usage: my-parser.mark().chain(debugLog("my-parser")).then(...)
 import {debugConfig} from "../../debug";
 import * as P from "parsimmon";
 import {Mark, Parser} from "parsimmon";
@@ -6,7 +5,7 @@ import {BotParser, St} from "./bot-parser";
 
 function debugLog<T>(str: string): (m: Mark<T>) => Parser<T> {
     return (m: Mark<T>) => {
-        console.log(`${str} ${m.start.offset} ${m.end.offset - 1} ${m.value}`);
+        console.log(`${str}, (${m.start.offset} ${m.end.offset - 1}) => ${m.value}`);
         return P.succeed(m.value)
     };
 }
@@ -15,7 +14,7 @@ function debugLog<T>(str: string): (m: Mark<T>) => Parser<T> {
 // @ts-ignore
 function recordAttempt<T>(str: string): (p: BotParser<T>) => BotParser<T> {
     return (p) => (st: St) => P.succeed('').mark().chain(
-        debugLog("Attempt: " + str?.toString() + ", depth: " + st.expressionDepth)
+        debugLog("Attempt: " + str?.toString() + ", d: " + st.expressionDepth)
     ).then(p(st))
 }
 
@@ -23,7 +22,7 @@ function recordAttempt<T>(str: string): (p: BotParser<T>) => BotParser<T> {
 // @ts-ignore
 function recordSuccess<T>(str: string): (p: BotParser<T>) => BotParser<T> {
     return (p) => (st: St) => p(st).mark().chain(
-        debugLog("Success: " + str?.toString() + ", depth: " + st.expressionDepth)
+        debugLog("Success: " + str?.toString() + ", d: " + st.expressionDepth)
     )
 }
 

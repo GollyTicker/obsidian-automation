@@ -1,14 +1,14 @@
-```
+```oa
 when: mpc-begin:
 bcomes: text: "<!-- oa! mpc-begin -->"
 ```
 
-```
+```oa
 when: mpc-end:
 bcomes: text: "<!-- oa! mpc-end -->"
 ```
 
-```
+```oa
 when: main-page-content: here
 become: text: (mpc-begin:) (mpc-end:)
 ```
@@ -17,7 +17,7 @@ become: text: (mpc-begin:) (mpc-end:)
 * We could make the pattern-match definition of text in a way, that it expects a certain type `string` for it's
   arguments. If it doesn't match, then it does not evaluate.
 
-```
+```oa
 when: %X
 matching: %X (find: text-concat:
   (text: mpc-begin: )
