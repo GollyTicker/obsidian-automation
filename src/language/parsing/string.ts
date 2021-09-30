@@ -1,28 +1,49 @@
-export const JAVASCRIPT_BASIC_ESCAPES = [
+export const BOTLANG_BASIC_ESCAPE_RULES: [string, string][] = [
     ["\'", "\\\'"],
     ["\"", "\\\""],
     ["\\", "\\\\"]
 ]
 
-export const JAVASCRIPT_CONTROL_CHARACTER_ESCAPES = [
+export const BOTLANG_CONTROL_CHARACTER_ESCAPE_RULES: [string, string][] = [
     ["\n", "\\n"],
     ["\r", "\\r"],
     ["\t", "\\t"]
 ]
 
-export const JAVASCRIPT_STRING_ESCAPES =
-    JAVASCRIPT_BASIC_ESCAPES.concat(JAVASCRIPT_CONTROL_CHARACTER_ESCAPES)
+export const BOTLANG_STRING_ESCAPE_RULES: [string, string][] =
+    BOTLANG_BASIC_ESCAPE_RULES.concat(BOTLANG_CONTROL_CHARACTER_ESCAPE_RULES)
+
+// assumes that the length of all replacements patterns have same length
+function applyReplacements(rules: [string, string][], str: string): string {
+    const patternLength = rules[0][0].length
+    let buf = ""
+
+    for (let i = 0; i < str.length; i++) {
+        if (i + patternLength - 1 < str.length) {
+
+            const current = str.substr(i, patternLength)
+            const match = rules.find(([pattern, _]) => current === pattern)
+
+            if (match !== undefined) {
+                const target = match[1]
+                buf = buf + target
+                i = i + patternLength - 1
+
+            } else {
+                buf = buf + str.charAt(i)
+            }
+        } else {
+            buf = buf + str.charAt(i)
+        }
+    }
+
+    return buf
+}
 
 export function toEscaped(literal: string): string {
-    JAVASCRIPT_STRING_ESCAPES.forEach(([lit, esc]) => {
-        literal = literal.replaceAll(lit, esc)
-    })
-    return literal
+    return applyReplacements(BOTLANG_STRING_ESCAPE_RULES, literal)
 }
 
 export function toLiteral(escaped: string): string {
-    JAVASCRIPT_STRING_ESCAPES.forEach(([lit, esc]) => {
-        escaped = escaped.replaceAll(esc, lit)
-    })
-    return escaped
+    return applyReplacements(BOTLANG_STRING_ESCAPE_RULES.map(([a, b]) => [b, a]), escaped)
 }
