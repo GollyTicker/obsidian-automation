@@ -14,7 +14,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
     mySetting: 'default'
 }
 
-function runTests() {
+async function runTests() {
     // @ts-ignore
     add;
     add2;

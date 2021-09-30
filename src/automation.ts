@@ -2,9 +2,9 @@ import {App} from "obsidian";
 import MyPlugin from "./main";
 import {extractAutomationCodeFragments, START_AUTOMATION_CODE_PREFIX} from "./code-fragment-extraction";
 import {BotDefinition, ReadFile} from "./entities";
-import {parseBot} from "./language/parsing/bot-lang-parser";
 import {asIndentedString} from "./language/transformation/foldings";
 import {debugConfig} from "./debug";
+import {parseBotCode} from "./language/parsing/bot-lang-parser";
 
 // @ts-ignore - Global var defs
 window.__obsidianAutomation = {
@@ -31,10 +31,12 @@ export async function testAutomation(plugin: MyPlugin) {
 
     const botDefinitions = await extractBotDefinitions(app)
 
-    const parsedExpressions = botDefinitions.map(botDef => parseBot(botDef).then(ast => ({...botDef, ast: ast})))
+    const parsedExpressions = botDefinitions.map(botDef =>
+        parseBotCode(botDef.code).then(ast => ({...botDef, ast: ast}))
+    )
 
     parsedExpressions.forEach(pro => pro
-        .then(bot => console.log("Parsed OK - " + bot.fl.name + "\n" + asIndentedString(bot.ast, undefined, true)))
+        .then(bot => console.log("Parsed OK - " + bot.fl.name + "\n" + asIndentedString(bot.ast, true)))
         .catch(err => console.log("Parsed FAIL: ", err))
     )
 }

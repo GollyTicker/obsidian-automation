@@ -2,9 +2,9 @@ import * as P from "parsimmon";
 
 export function toPromise<T>(result: P.Result<T>, code: string): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-        if (result.status === true) {
+        if (result.status) {
             resolve(result.value);
-        } else if (result.status === false) {
+        } else {
             reject("Expected: " + result.expected + ", at " + P.formatError(code, result));
         }
     })

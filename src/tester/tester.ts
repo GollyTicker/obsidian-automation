@@ -7,20 +7,21 @@
 
 import {Notice} from "obsidian";
 
-let collectedTests: (() => void)[] = []
+let collectedTests: (() => Promise<void>)[] = []
 let successfulTests = 0
 
 export function assert(bool: boolean, left: any, right: any): void {
     if (!bool) {
-        console.log("Failure: " + left + ", " + right)
-        console.assert(bool, "Failure:", left, right)
+        console.log("Failure: " + left + " || " + right)
+        console.assert(bool, "Failure.")
+        throw new Error()
     }
 }
 
-export function test(desc: string, fn: () => void): void {
-    const testRunner = () => {
+export function test(desc: string, fn: () => Promise<void>): void {
+    const testRunner = async () => {
         try {
-            fn()
+            await fn()
             successfulTests++
         } catch (e) {
             console.error("Encountered error in test case: ", desc)
@@ -30,15 +31,19 @@ export function test(desc: string, fn: () => void): void {
     collectedTests.push(testRunner)
 }
 
-export function runAll() {
+export async function runAll() {
     new Notice("Running all tests", 3000);
-    collectedTests.forEach((f) => f())
+
+    for (const testCase of collectedTests) {
+        await testCase()
+    }
+
     if (collectedTests.length == successfulTests) {
         const msg = `✅✅✅ All ${successfulTests} tests passed ✅✅✅`
         console.log(msg)
         new Notice(msg, 5000)
     } else {
-        const msg = `❌❌❌ ${collectedTests.length - successfulTests} tests failed! ❌❌❌`
+        const msg = `❌❌❌ ${collectedTests.length - successfulTests} of ${collectedTests.length} tests failed! ❌❌❌`
         console.log(msg)
         new Notice(msg, 5000)
     }

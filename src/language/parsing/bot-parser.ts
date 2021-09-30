@@ -1,6 +1,6 @@
 import * as P from "parsimmon";
 import {Parser} from "parsimmon";
-import {$$} from "../../utils";
+import {__} from "../../utils";
 
 /* ================= !! IMPORTANT !! ======================
 The types in @types/parsimmon are older than the actual parser used!
@@ -68,7 +68,7 @@ export function withResult<T>(t: T): ((tpl: [any, St]) => [T, St]) {
 // =========== BotParser combinators - hence B suffix =============
 
 export function surroundB<T>(before: BotParser<string>, elt: BotParser<T>, after: BotParser<string>): BotParser<T> {
-    return $$(before, thenB, $$(elt, skipB, after))
+    return __(before, thenB, __(elt, skipB, after))
 }
 
 // hint: it's the Monad bind
@@ -81,19 +81,19 @@ export function lazyChainB<T, R>(first: () => BotParser<T>, chained: (t: T) => B
 }
 
 export function mapB<T, R>(parser: BotParser<T>, func: (t: T) => R): BotParser<R> {
-    return $$(parser, chainB, (t: T) => succeed(func(t)))
+    return __(parser, chainB, (t: T) => succeed(func(t)))
 }
 
 export function withResultB<T>(parser: BotParser<any>, t: T): BotParser<T> {
-    return $$(parser, mapB, () => t)
+    return __(parser, mapB, () => t)
 }
 
 export function thenB<T>(first: BotParser<any>, second: BotParser<T>): BotParser<T> {
-    return $$(first, chainB, () => second)
+    return __(first, chainB, () => second)
 }
 
 export function skipB<T>(first: BotParser<T>, second: BotParser<any>): BotParser<T> {
-    return $$(first, chainB, (t: T) => withResultB(second, t))
+    return __(first, chainB, (t: T) => withResultB(second, t))
 }
 
 export function altB<T>(...parsers: BotParser<T>[]): BotParser<T> {
@@ -109,5 +109,5 @@ export function mapStB<T>(parser: BotParser<T>, func: (st: St) => St): BotParser
 }
 
 export function onSt(func: (st: St) => St): BotParser<""> {
-    return $$(succeed<"">(""), mapStB, func)
+    return __(succeed<"">(""), mapStB, func)
 }

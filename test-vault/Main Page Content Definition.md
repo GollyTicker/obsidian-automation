@@ -22,10 +22,10 @@ when: %X
 matching: %X (find: text-concat:
   (text: mpc-begin: )
   (text: %currentText)
-  (text: mpc-begin: )
+  (text: mpc-end: )
 )
-matching: %currentText (mpg-def: )
-become: %(text-concat:
+matching: %currentText not: mpg-def:
+become: (text-concat:
   (text: mpc-begin: )
   (text: mpg-def: )
   (text: mpc-end: )

@@ -1,6 +1,5 @@
-import {BotDefinition} from "../../entities";
 import * as P from "parsimmon";
-import {app, Atom, atom, BotAst, Expr, exprEquals, seq, str, Str, VAR_ATOM} from "../ast";
+import {app, Atom, atom, BotAst, Expr, exprEquals, seq, str, Str, VAR} from "../ast";
 import {spacesParser, WhiteSpaceType} from "./whitespace";
 import {regExpEscape, toPromise} from "../../common/util";
 import {BACKSLASH, BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, DOUBLE_QUOTE, PERCENT, SPECIAL_CHARS} from "./constants";
@@ -22,11 +21,11 @@ import {
     withResultB
 } from "./bot-parser";
 import {withLogs} from "./debug";
-import {$$} from "../../utils";
+import {__} from "../../utils";
 import {toLiteral} from "./string";
 
-export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
-    return toPromise(BotLang.botDefinition.parse(botDef.code), botDef.code)
+export async function parseBotCode(code: string): Promise<BotAst> {
+    return toPromise(BotLang.definition.parse(code), code)
 }
 
 /*
@@ -42,27 +41,27 @@ export async function parseBot(botDef: BotDefinition): Promise<BotAst> {
 
 const comma = prefixOptSpacesB(regexp(new RegExp(regExpEscape(COMMA))))
 
-const percent = prefixOptSpacesB($$(
+const percent = prefixOptSpacesB(__(
     regexp(new RegExp(PERCENT)),
     mapStB,
     encounteredVarPercent
 ))
 
-const colon = (hd: Expr) => prefixOptSpacesB($$(
+const colon = (hd: Expr) => prefixOptSpacesB(__(
     regexp(new RegExp(regExpEscape(COLON))),
     mapStB,
-    (st: St) => $$(hd, exprEquals, VAR_ATOM) ? encounteredVarPercent(st) : st
+    (st: St) => __(hd, exprEquals, VAR) ? encounteredVarPercent(st) : st
 ))
 
 const doubleQuote = regexp(new RegExp(regExpEscape(DOUBLE_QUOTE)))
 
-const bracketOpen = prefixOptSpacesB($$(
+const bracketOpen = prefixOptSpacesB(__(
     regexp(new RegExp(regExpEscape(BRACKET_OPEN))),
     mapStB,
     bracketDepthModifier(1)
 ))
 
-const bracketClose = prefixOptSpacesB($$(
+const bracketClose = prefixOptSpacesB(__(
     regexp(new RegExp(regExpEscape(BRACKET_CLOSE))),
     mapStB,
     bracketDepthModifier(-1)
@@ -72,7 +71,11 @@ function whiteSpaceType(st: St): WhiteSpaceType {
     return st.bracketDepth >= 1 ? 'w/newline' : 'simple'
 }
 
-const argListSeparator = altB(comma, spacesParser('mandatory', whiteSpaceType))
+const argListSeparator = altB(comma,
+    (st: St) => spacesParser('mandatory', whiteSpaceType)(st)
+    // todo. maybe this is the cause.
+    // .notFollowedBy(whiteSpaceType(st) === "simple" ? P.newline : P.eof)
+)
 
 
 // ======================= main definitions =======================
@@ -82,7 +85,7 @@ const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS) + "\\s"
 const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+")
 
 const atomBL: BotParser<Atom> = withLogs<Atom>("atom")(prefixOptSpacesB(
-    $$(regexp(ATOM), mapB, atom)
+    __(regexp(ATOM), mapB, atom)
 ))
 
 const STRING_BREAKER = regExpEscape(DOUBLE_QUOTE)
@@ -96,7 +99,7 @@ const STRING = new RegExp(
 // var or as a normal string.
 
 // todo. write interpolating variant of string
-const stringBL: BotParser<Str> = prefixOptSpacesB($$(
+const stringBL: BotParser<Str> = prefixOptSpacesB(__(
     surroundB(doubleQuote, regexp(STRING), doubleQuote),
     mapB,
     (x: string) => str(toLiteral(x))
@@ -111,25 +114,25 @@ function exprBL(): BotParser<Expr> {
             surroundB(bracketOpen, exprBL(), bracketClose),
             stringBL,
         )
-        const interpolatingExpr = exprDepthIncreaserB($$(
+        const interpolatingExpr = exprDepthIncreaserB(__(
             percent,
             thenB,
-            $$(nonInterpolatingExpr, mapB, (e: Expr) => app(VAR_ATOM, [e]))
+            __(nonInterpolatingExpr, mapB, (e: Expr) => app(VAR, [e]))
         ))
         return altB(interpolatingExpr, nonInterpolatingExpr)
     }
 
     const optColonPrefixedArgList = (hd: Expr) => {
-        const colonArgList = $$(colon(hd), thenB,
-            $$(argListBL(), mapB, (tl: Expr[]) => app(hd, tl))
+        const colonArgList = __(colon(hd), thenB,
+            __(argListBL(), mapB, (tl: Expr[]) => app(hd, tl))
         )
 
-        return $$(colonArgList, optionalOrElse, hd)
+        return __(colonArgList, optionalOrElse, hd)
     }
 
     return withLogs<Expr>("expr")(prefixOptSpacesB(
         exprDepthIncreaserB(
-            $$(head, lazyChainB, optColonPrefixedArgList)
+            __(head, lazyChainB, optColonPrefixedArgList)
         )
     ))
 }
@@ -152,9 +155,9 @@ const initialState: St = {
     interpolationRegimes: []
 }
 
-export const BotLang = P.createLanguage<{ botDefinition: BotAst }>({
-    botDefinition: () => {
-        const expressionParser = $$(exprBL(), runWith, initialState).map(result)
+export const BotLang = P.createLanguage<{ definition: BotAst }>({
+    definition: () => {
+        const expressionParser = __(exprBL(), runWith, initialState).map(result)
         return P.sepBy(expressionParser, P.optWhitespace)
             .skip(P.end)
             .map(seq)
@@ -191,7 +194,7 @@ function exprDepthIncreaserB<T>(parser: BotParser<T>): BotParser<T> {
 }
 
 function prefixOptSpacesB<T>(parser: BotParser<T>): BotParser<T> {
-    return $$(spacesParser('optional', whiteSpaceType), thenB, parser)
+    return __(spacesParser('optional', whiteSpaceType), thenB, parser)
 }
 
 type Combiner<A> = (head: A, tail: A[]) => A[]
@@ -209,7 +212,7 @@ function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { sep: (h: A) => Bo
     const anySepParser = (head: A) => altB(...indexed.map(o => o.sepi(head)))
 
     function parseSepAndTailAndCombineWith(head: A, recursiveTailParser: () => BotParser<A[]>): BotParser<A[]> {
-        return $$(anySepParser(head), chainB, (i: number) => $$(
+        return __(anySepParser(head), chainB, (i: number) => __(
             recursiveTailParser(),
             mapB,
             (tail: A[]) => indexed[i].combiner(head, tail)
@@ -217,13 +220,13 @@ function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { sep: (h: A) => Bo
     }
 
     function recursiveRightAssociativeParser(): BotParser<A[]> {
-        const list = $$(elt, chainB, (head: A) => $$(
+        const list = __(elt, chainB, (head: A) => __(
             parseSepAndTailAndCombineWith(head, recursiveRightAssociativeParser),
             optionalOrElse,
             [head]
         ))
 
-        return $$(list, optionalOrElse, [])
+        return __(list, optionalOrElse, [])
     }
 
     return recursiveRightAssociativeParser()

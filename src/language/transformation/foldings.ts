@@ -4,8 +4,8 @@ import {toEscaped} from "../parsing/string";
 
 export function asIndentedString(
     expr: Expr,
-    dataStr: (x: any) => string = (x) => x.toString(),
-    fullForm: boolean = false
+    fullForm: boolean = false,
+    dataStr: (x: any) => string = (x) => x.toString()
 ): string {
     const spaces = ".  "
     const indentAfterFirstNewline = (str: string) => str.replace(/\n/g, "\n" + spaces)
@@ -29,10 +29,10 @@ export function asCodeString(
 ): string {
     return fold(
         (s) => s,
-        (x) => `"${escape(x)}"`,
+        (x) => `"${toEscaped(x)}"`,
         dataStr,
         (head, tail) =>
-            "(" + head + "): " + "(" + tail.join("), (") + ")",
+            "(" + head + "): " + tail.map(x => "(" + x + ")").join(","),
         expr
     )
 }

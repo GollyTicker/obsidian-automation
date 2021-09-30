@@ -1,11 +1,13 @@
 import _ from "lodash";
-import {$$} from "../utils";
+import {__} from "../utils";
 
-export type BotAst = Seq
+export type BotAst = Expr
+
+export type ExprToken = 'Atom' | 'Str' | 'Data' | 'App'
 
 export abstract class Expr {
 
-    abstract type: 'Atom' | 'Data' | 'App' | 'Str'
+    abstract type: ExprToken
 
     public toString(): string {
         // @ts-ignore
@@ -21,8 +23,8 @@ export class Atom extends Expr {
     }
 
     public specialSyntaxAtom(): boolean {
-        return $$(this, exprEquals, VAR_ATOM) ||
-            $$(this, exprEquals, SEQUENCE_ATOM)
+        return __(this, exprEquals, VAR) ||
+            __(this, exprEquals, SEQUENCE)
     }
 }
 
@@ -54,22 +56,30 @@ export class App extends Expr {
     }
 }
 
-// Seq(...) == App(Atom(sequence), ...)
-export class Seq extends App {
-    constructor(public readonly tail: Expr[]) {
-        super(atom("sequence"), tail);
-    }
-}
-
 export const atom = (name: string) => new Atom(name);
 export const data = (data: any) => new Data(data);
 export const str = (x: string) => new Str(x);
 export const app = (head: Expr, tail: Expr[]) => new App(head, tail);
 
-export const VAR_ATOM = atom("var")
-export const SEQUENCE_ATOM = atom("sequence")
+export function app_(head: Expr, ...tail: Expr[]): App {
+    return app(head, tail)
+}
 
-export const seq = (exprs: Expr[]) => new App(SEQUENCE_ATOM, exprs);
+export const VAR = atom("var")
+export const SEQUENCE = atom("sequence")
+
+export const WHEN = atom("when")
+export const BECOME = atom("become")
+export const MATCHING = atom("matching")
+
+export const CONCAT = atom("concat")
+
+export const mkVar = (expr: Expr) => new App(VAR, [expr])
+export const seq = (exprs: Expr[]) => new App(SEQUENCE, exprs);
+
+export function seq_(...exprs: Expr[]): Expr {
+    return seq(exprs)
+}
 
 export function exprEquals(l: Expr, r: Expr): boolean {
     return _.isEqual(r, l)

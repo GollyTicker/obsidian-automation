@@ -17,7 +17,7 @@ export function cases<A>(
     } else if (x.type === "App") {
         return appF(x as App)
     } else {
-        throw new Error("cases: Unhandled case" + x.type)
+        throw new Error("cases: Unhandled case: " + x.type + " for " + x)
     }
 }
 
