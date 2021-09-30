@@ -16,9 +16,10 @@ Stop with `scripts/stop.sh`.
 
 To run the tests:
 
-1. start the plugin in dev mode just as above.
-2. Press `Ctrl + P` to open the command palette.
-3. Type `test` and run the command `Run Tests`.
+1. Set `debugConfig.loadTests` to true in `src/debug.ts`.
+2. start the plugin in dev mode just as above.
+3. Press `Ctrl + P` to open the command palette.
+4. Type `test` and run the command `Run Tests`.
 
 ## Tasks
 
