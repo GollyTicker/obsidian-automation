@@ -17,8 +17,9 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 async function runTests() {
     // @ts-ignore
     add;
+    // @ts-ignore
     add2;
-    runAll()
+    await runAll()
 }
 
 export default class MyPlugin extends Plugin {

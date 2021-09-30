@@ -5,6 +5,4 @@ export const BRACKET_CLOSE = ")"
 export const DOUBLE_QUOTE = "\""
 export const PERCENT = "%"
 
-export const SPECIAL_CHARS = COLON + COMMA + PERCENT + BRACKET_OPEN + BRACKET_CLOSE + DOUBLE_QUOTE
-
-export const BACKSLASH = "\\"
+export const SPECIAL_CHARS_AST = COLON + COMMA + PERCENT + BRACKET_OPEN + BRACKET_CLOSE + DOUBLE_QUOTE

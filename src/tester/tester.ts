@@ -12,7 +12,7 @@ let successfulTests = 0
 
 export function assert(bool: boolean, left: any, right: any): void {
     if (!bool) {
-        console.log("Failure: " + left + " || " + right)
+        console.log("Failure:\n" + left + "\n--- != ---\n" + right)
         console.assert(bool, "Failure.")
         throw new Error()
     }
@@ -32,6 +32,13 @@ export function test(desc: string, fn: () => Promise<void>): void {
 }
 
 export async function runAll() {
+    if (collectedTests.length === 0) {
+        const msg = "No tests found. Did you forget to set debugConfig.loadTests=true?"
+        console.warn(msg)
+        new Notice(msg, 5000)
+        return
+    }
+
     new Notice("Running all tests", 3000);
 
     for (const testCase of collectedTests) {
@@ -44,7 +51,7 @@ export async function runAll() {
         new Notice(msg, 5000)
     } else {
         const msg = `❌❌❌ ${collectedTests.length - successfulTests} of ${collectedTests.length} tests failed! ❌❌❌`
-        console.log(msg)
+        console.warn(msg)
         new Notice(msg, 5000)
     }
 }

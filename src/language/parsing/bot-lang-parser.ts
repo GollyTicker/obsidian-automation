@@ -135,12 +135,12 @@ function exprBL(): BotParser<Expr> {
 }
 
 const argListBL: () => BotParser<Expr[]> = () => withLogs<Expr[]>("argList")(
-    seqByRightAssocB(
+    sequenceWithCombiner(
         exprBL(),
         [
             {postHeadSep: varAwareColon, combiner: (x: Expr, xs: Expr[]) => [app(x, xs)]},
             {postHeadSep: () => argListSeparator, combiner: (x: Expr, xs: Expr[]) => [x].concat(xs)}
-        ]
+        ] // sequenceWithCombiner can be used to simulate right-associative parsing
     )
 )
 
@@ -154,7 +154,7 @@ const initialState: St = {
 
 export const BotLang = P.createLanguage<{ definition: BotAst }>({
     definition: () => {
-        const expressionSequenceParser = seqByRightAssocB(exprBL(),
+        const expressionSequenceParser = sequenceWithCombiner(exprBL(),
             [{
                 postHeadSep: () => spacesParser("mandatory", () => "w/newline"),
                 combiner: (x, xs) => [x].concat(xs)
@@ -208,12 +208,11 @@ type Combiner<A> = (head: A, tail: A[]) => A[]
 
 /**
  * todo.
- *  rename function?
  */
-function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { postHeadSep: (h: A) => BotParser<any>, combiner: Combiner<A> }[]): BotParser<A[]> {
+function sequenceWithCombiner<A>(elt: BotParser<A>, sepAndCombiner: { postHeadSep: (h: A) => BotParser<any>, combiner: Combiner<A> }[]): BotParser<A[]> {
 
     const indexed: { sepi: (h: A) => BotParser<number>, combiner: Combiner<A> }[] =
-        sepCombiner.map((obj, i) =>
+        sepAndCombiner.map((obj, i) =>
             ({
                 sepi: (h) => withResultB(obj.postHeadSep(h), i),
                 combiner: obj.combiner
@@ -222,7 +221,7 @@ function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { postHeadSep: (h: 
 
     const anySepParser = (head: A) => altB(...indexed.map(o => o.sepi(head)))
 
-    function parseSepAndTailAndCombineWith(head: A, recursiveTailParser: () => BotParser<A[]>): BotParser<A[]> {
+    function parseSepAndTailAndCombine(head: A, recursiveTailParser: () => BotParser<A[]>): BotParser<A[]> {
         return __(anySepParser(head), chainB, (i: number) => __(
             recursiveTailParser(),
             mapB,
@@ -230,9 +229,9 @@ function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { postHeadSep: (h: 
         ))
     }
 
-    function recursiveRightAssociativeParser(): BotParser<A[]> {
+    function recursiveSequenceParser(): BotParser<A[]> {
         const list = __(elt, chainB, (head: A) => __(
-            parseSepAndTailAndCombineWith(head, recursiveRightAssociativeParser),
+            parseSepAndTailAndCombine(head, recursiveSequenceParser),
             optionalOrElse,
             [head]
         ))
@@ -240,6 +239,6 @@ function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { postHeadSep: (h: 
         return __(list, optionalOrElse, [])
     }
 
-    return recursiveRightAssociativeParser()
+    return recursiveSequenceParser()
 }
 

@@ -2,12 +2,13 @@ import {debugConfig} from "../../debug";
 import * as P from "parsimmon";
 import {Mark, Parser} from "parsimmon";
 import {BotParser, St} from "./bot-parser";
-import {BotAst} from "../ast";
+import {BotAst, Expr} from "../ast";
 import {asIndentedString} from "../transformation/foldings";
 
-function debugLog<T>(str: string): (m: Mark<T>) => Parser<T> {
-    return (m: Mark<T>) => {
-        console.log(`${str}, (${m.start.offset} ${m.end.offset - 1}) => ${m.value}`);
+export function debugLog<T>(str: string): (m: Mark<[T, St]>) => Parser<[T, St]> {
+    return (m: Mark<[T, St]>) => {
+        const valueStr = m.value[0] instanceof Expr ? asIndentedString(m.value[0], true) : m.value[0]
+        console.log(`${str}, (${m.start.offset}, ${m.end.offset - 1}) => ${valueStr}`);
         return P.succeed(m.value)
     };
 }
@@ -15,7 +16,7 @@ function debugLog<T>(str: string): (m: Mark<T>) => Parser<T> {
 // debugging function.
 // @ts-ignore
 function recordAttempt<T>(str: string): (p: BotParser<T>) => BotParser<T> {
-    return (p) => (st: St) => P.succeed('').mark().chain(
+    return (p) => (st: St) => P.succeed<["", St]>(['', st]).mark().chain(
         debugLog("Attempt: " + str?.toString() + ", d: " + st.expressionDepth)
     ).then(p(st))
 }

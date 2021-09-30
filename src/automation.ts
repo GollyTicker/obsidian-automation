@@ -11,9 +11,9 @@ window.__obsidianAutomation = {
     astNodeToString: asIndentedString
 };
 
-export function findAndInitiateBotsSequentially(plugin: MyPlugin) {
+export async function findAndInitiateBotsSequentially(plugin: MyPlugin) {
     try {
-        testAutomation(plugin)
+        await testAutomation(plugin)
     } catch (e) {
         console.error(e);
     }

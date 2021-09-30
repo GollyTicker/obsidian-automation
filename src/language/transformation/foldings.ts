@@ -11,7 +11,7 @@ export function asIndentedString(
     const indentAfterFirstNewline = (str: string) => str.replace(/\n/g, "\n" + spaces)
     return fold(
         (s) => fullForm ? "Atom(" + s + ")" : "(" + s + ")",
-        (x) => `"${toEscaped(x)}"`,
+        (x) => `Str("${toEscaped(x)}")`,
         (data) => fullForm ? "Data(" + dataStr(data) + ")" : "#(" + dataStr(data) + ")",
         (head, tail) => {
             const indented = "h  " + indentAfterFirstNewline(head) + "\nt  " + indentAfterFirstNewline(tail.join("\n"))
