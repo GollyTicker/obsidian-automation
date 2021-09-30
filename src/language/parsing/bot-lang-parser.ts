@@ -2,7 +2,7 @@ import * as P from "parsimmon";
 import {app, Atom, atom, BotAst, Expr, exprEquals, seq, str, Str, VAR} from "../ast";
 import {spacesParser, WhiteSpaceType} from "./whitespace";
 import {regExpEscape, toPromise} from "../../common/util";
-import {BACKSLASH, BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, DOUBLE_QUOTE, PERCENT, SPECIAL_CHARS} from "./constants";
+import {BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, DOUBLE_QUOTE, PERCENT, SPECIAL_CHARS_AST} from "./constants";
 import {
     altB,
     BotParser,
@@ -22,7 +22,7 @@ import {
 } from "./bot-parser";
 import {withLogs} from "./debug";
 import {__} from "../../utils";
-import {toLiteral} from "./string";
+import {BOTLANG_STRING_ESCAPE_RULES, toLiteral} from "./string";
 
 export async function parseBotCode(code: string): Promise<BotAst> {
     return toPromise(BotLang.definition.parse(code), code)
@@ -47,7 +47,7 @@ const percent = prefixOptSpacesB(__(
     encounteredVarPercent
 ))
 
-const colon = (hd: Expr) => prefixOptSpacesB(__(
+const varAwareColon = (hd: Expr) => prefixOptSpacesB(__(
     regexp(new RegExp(regExpEscape(COLON))),
     mapStB,
     (st: St) => __(hd, exprEquals, VAR) ? encounteredVarPercent(st) : st
@@ -71,16 +71,11 @@ function whiteSpaceType(st: St): WhiteSpaceType {
     return st.bracketDepth >= 1 ? 'w/newline' : 'simple'
 }
 
-const argListSeparator = altB(comma,
-    (st: St) => spacesParser('mandatory', whiteSpaceType)(st)
-    // todo. maybe this is the cause.
-    // .notFollowedBy(whiteSpaceType(st) === "simple" ? P.newline : P.eof)
-)
-
+const argListSeparator = altB(comma, spacesParser('mandatory', whiteSpaceType))
 
 // ======================= main definitions =======================
 
-const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS) + "\\s"
+const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS_AST) + "\\s"
 
 const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+")
 
@@ -89,10 +84,11 @@ const atomBL: BotParser<Atom> = withLogs<Atom>("atom")(prefixOptSpacesB(
 ))
 
 const STRING_BREAKER = regExpEscape(DOUBLE_QUOTE)
-const STRING_ESCAPED_QUOTE = regExpEscape(BACKSLASH + DOUBLE_QUOTE)
+const STRING_ESCAPES = BOTLANG_STRING_ESCAPE_RULES.map((x) => regExpEscape(x[1]))
+// = [ regExpEscape("\\\n"), regExpEscape("\\\t"), ... ]
 
 const STRING = new RegExp(
-    "(" + STRING_ESCAPED_QUOTE + "|[^" + STRING_BREAKER + "])*"
+    "(" + STRING_ESCAPES.join("|") + "|[^" + STRING_BREAKER + "])*"
 )
 
 // todo. we need interpolation regimes, so that we can properly parse a % string as either
@@ -109,11 +105,8 @@ const stringBL: BotParser<Str> = prefixOptSpacesB(__(
 function exprBL(): BotParser<Expr> {
 
     function head(): BotParser<Expr> {
-        const nonInterpolatingExpr = altB<Expr>(
-            atomBL,
-            surroundB(bracketOpen, exprBL(), bracketClose),
-            stringBL,
-        )
+        const nonInterpolatingExpr = altB<Expr>(atomBL, bracketExpr(), stringBL)
+
         const interpolatingExpr = exprDepthIncreaserB(__(
             percent,
             thenB,
@@ -122,8 +115,12 @@ function exprBL(): BotParser<Expr> {
         return altB(interpolatingExpr, nonInterpolatingExpr)
     }
 
+    function bracketExpr() {
+        return withLogs<Expr>("bracketExpr")(surroundB(bracketOpen, exprBL(), bracketClose))
+    }
+
     const optColonPrefixedArgList = (hd: Expr) => {
-        const colonArgList = __(colon(hd), thenB,
+        const colonArgList = __(varAwareColon(hd), thenB,
             __(argListBL(), mapB, (tl: Expr[]) => app(hd, tl))
         )
 
@@ -141,8 +138,8 @@ const argListBL: () => BotParser<Expr[]> = () => withLogs<Expr[]>("argList")(
     seqByRightAssocB(
         exprBL(),
         [
-            {sep: colon, combiner: (x: Expr, xs: Expr[]) => [app(x, xs)]},
-            {sep: () => argListSeparator, combiner: (x: Expr, xs: Expr[]) => [x].concat(xs)}
+            {postHeadSep: varAwareColon, combiner: (x: Expr, xs: Expr[]) => [app(x, xs)]},
+            {postHeadSep: () => argListSeparator, combiner: (x: Expr, xs: Expr[]) => [x].concat(xs)}
         ]
     )
 )
@@ -157,10 +154,20 @@ const initialState: St = {
 
 export const BotLang = P.createLanguage<{ definition: BotAst }>({
     definition: () => {
-        const expressionParser = __(exprBL(), runWith, initialState).map(result)
-        return P.sepBy(expressionParser, P.optWhitespace)
-            .skip(P.end)
-            .map(seq)
+        const expressionSequenceParser = seqByRightAssocB(exprBL(),
+            [{
+                postHeadSep: () => spacesParser("mandatory", () => "w/newline"),
+                combiner: (x, xs) => [x].concat(xs)
+            }]
+        )
+
+        const trimmedExpressionSequence = surroundB(
+            spacesParser("optional", () => "w/newline"),
+            __(expressionSequenceParser, mapB, seq),
+            spacesParser("optional", () => "w/newline")
+        )
+
+        return __(trimmedExpressionSequence, runWith, initialState).map(result)
     }
 })
 
@@ -199,12 +206,16 @@ function prefixOptSpacesB<T>(parser: BotParser<T>): BotParser<T> {
 
 type Combiner<A> = (head: A, tail: A[]) => A[]
 
-function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { sep: (h: A) => BotParser<string>, combiner: Combiner<A> }[]): BotParser<A[]> {
+/**
+ * todo.
+ *  rename function?
+ */
+function seqByRightAssocB<A>(elt: BotParser<A>, sepCombiner: { postHeadSep: (h: A) => BotParser<any>, combiner: Combiner<A> }[]): BotParser<A[]> {
 
     const indexed: { sepi: (h: A) => BotParser<number>, combiner: Combiner<A> }[] =
         sepCombiner.map((obj, i) =>
             ({
-                sepi: (h) => withResultB(obj.sep(h), i),
+                sepi: (h) => withResultB(obj.postHeadSep(h), i),
                 combiner: obj.combiner
             })
         )
