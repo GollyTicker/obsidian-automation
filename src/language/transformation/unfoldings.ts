@@ -2,10 +2,11 @@ import {Random} from "../../common/random";
 import {Expr, ExprToken} from "../ast";
 import {unfold} from "./base-definitions";
 import {regExpEscape} from "../../common/util";
-import {SPECIAL_CHARS} from "../parsing/constants";
+import {SPECIAL_CHARS_AST} from "../parsing/constants";
 import {toEscaped} from "../parsing/string";
 
-const SPECIAL_CHAR_REG_EXP = new RegExp("[" + regExpEscape(SPECIAL_CHARS) + "]");
+const SPECIAL_CHAR_REG_EXP = new RegExp("[" + regExpEscape(SPECIAL_CHARS_AST) + "]", "g")
+
 const MAX_ATOM_LENGTH = 5
 const MAX_STRING_LENGTH = 5
 const MAX_DATA_STRING_LENGTH = 5
@@ -30,7 +31,7 @@ export function fromRandom(
     function genAtom(src: Random): { a: string } {
         return {
             a: src.string(src.intBetween(1, MAX_ATOM_LENGTH))
-                .replace(SPECIAL_CHAR_REG_EXP, "_")
+                .replaceAll(SPECIAL_CHAR_REG_EXP, "_")
         }
     }
 
