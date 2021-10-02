@@ -117,9 +117,14 @@ const interpolatingString: BotParser<Expr> = __(
     sequenceWithCombiner<Expr, Expr>(
         __(regexpB(INTERPOL_STRING_PART), mapB, parsedStringToStr),
         [{
-            postHeadSep: () => exprDepthIncreaserB(altB(
-                surroundB(__(percent, skipB, stringB(BRACKET_OPEN)), exprBL(), stringB(BRACKET_CLOSE)),
-                __(percent, thenB, atomBL))),
+            postHeadSep: () => withLogs<Expr>("interpol-str-var")(
+                exprDepthIncreaserB(
+                    altB(
+                        surroundB(__(percent, skipB, stringB(BRACKET_OPEN)), exprBL(), stringB(BRACKET_CLOSE)),
+                        __(percent, thenB, atomBL)
+                    )
+                )
+            ),
             combiner: (x, interPolExpr, xs) => [x, mkVar(interPolExpr)].concat(xs)
         }]
     ),
@@ -133,15 +138,15 @@ function isInterpolating(st: St): boolean {
     return st.interpolationRegimes.length % 2 == 1
 }
 
-const stringBL: BotParser<Expr> = prefixOptSpacesB(
+const stringBL: BotParser<Expr> = withLogs<Expr>("string")(prefixOptSpacesB(
     surroundB(
         doubleQuote,
         __(currentState, chainB, (st: St) =>
             isInterpolating(st) ?
                 interpolatingString :
-                __(regexpB(STRING), mapB, parsedStringToStr)),
+                (__(regexpB(STRING), mapB, parsedStringToStr))),
         doubleQuote),
-)
+))
 
 // ( (exprBL) | atomBL | "str" | %exprBL ) (: argListBL)?
 function exprBL(): BotParser<Expr> {
