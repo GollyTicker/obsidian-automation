@@ -38,24 +38,33 @@ export function fromSimple<T>(parser: Parser<T>): BotParser<T> {
 /**
  * todo.
  */
-export function succeed<T>(t: T): BotParser<T> {
+export function succeedB<T>(t: T): BotParser<T> {
     return fromSimple(P.succeed(t))
 }
 
 /**
  * todo.
  */
-export function regexp(r: RegExp): BotParser<string> {
+export function regexpB(r: RegExp): BotParser<string> {
     return fromSimple(P.regexp(r))
 }
 
+export function stringB(str: string): BotParser<string> {
+    return fromSimple(P.string(str))
+}
+
+/**
+ * todo.
+ * @param st
+ */
+export const currentState: BotParser<St> = (st: St) => P.succeed([st, st])
 
 // =========== work with the result or the state =============
 
 /**
  * todo.
  */
-export function runWith<T>(p: BotParser<T>, st: St): Parser<[T, St]> {
+export function runWithB<T>(p: BotParser<T>, st: St): Parser<[T, St]> {
     return p(st)
 }
 
@@ -117,7 +126,7 @@ export function lazyChainB<T, R>(first: () => BotParser<T>, chained: (t: T) => B
  * todo.
  */
 export function mapB<T, R>(parser: BotParser<T>, func: (t: T) => R): BotParser<R> {
-    return __(parser, chainB, (t: T) => succeed(func(t)))
+    return __(parser, chainB, (t: T) => succeedB(func(t)))
 }
 
 /**
@@ -152,7 +161,7 @@ export function altB<T>(...parsers: BotParser<T>[]): BotParser<T> {
  * todo.
  */
 export function optionalOrElse<T>(parser: BotParser<T>, fallback: T): BotParser<T> {
-    return altB(parser, succeed(fallback))
+    return altB(parser, succeedB(fallback))
 }
 
 /**
@@ -166,5 +175,5 @@ export function mapStB<T>(parser: BotParser<T>, func: (st: St) => St): BotParser
  * todo.
  */
 export function onSt(func: (st: St) => St): BotParser<""> {
-    return __(succeed<"">(""), mapStB, func)
+    return __(succeedB<"">(""), mapStB, func)
 }

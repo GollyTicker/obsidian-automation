@@ -102,7 +102,7 @@ become: js-eval: %"%a + b"
 ```
 
 ```oa
-associations: (a: 3, b: 5)
+associations: (a: 3) (b: 5)
 js-eval: %"%a + %b"
 ```
 

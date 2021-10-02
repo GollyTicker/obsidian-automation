@@ -5,6 +5,6 @@ export function hasOwnProperty<X extends {}, Y extends PropertyKey>
 }
 
 // infix function application: __(1, plus, 3) = plus(1,3)
-export function __<A1, A2, R>(a1: A1, func: (a1: A1, a2: A2) => R, a2: A2): R {
+export function __<A, B, R>(a1: A, func: (a1: A, a2: B) => R, a2: B): R {
     return func(a1, a2)
 }

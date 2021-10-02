@@ -1,7 +1,7 @@
 import {assert, test} from "../../tester/tester";
 import {parseBotCode} from "./bot-lang-parser";
-import {BECOME, Expr, exprEquals, seq, WHEN} from "../ast";
-import {a, f, s, st} from "../shortform";
+import {app_, ASSOCIATIONS, BECOME, CONCAT, Expr, exprEquals, seq, WHEN} from "../ast";
+import {a, f, s, st, v} from "../shortform";
 import {asIndentedString} from "../transformation/foldings";
 import {simpleResultOutput} from "./debug";
 import {debugConfig} from "../../debug";
@@ -111,33 +111,77 @@ if (debugConfig.loadTests) {
             f(WHEN, f(a("calc"), st("pls\n" +
                 "\tt\\\n" +
                 "nl\"\n")))
-        )/*,
+        ),
 
-    // todo. continue here.
-    ["when: calc: plus, %a, var: b\n" +
-    "become: js-eval: %\"%a + b\""]: s(
-        f(WHEN, f(a("calc"), a("plus"), v(a("a")), v(a("b")))),
-        f(BECOME, f(a("js-eval"), v(
-            f(CONCAT,
-                v(a("a")),
-                st(" + b")
-            )
-        )))
-    ),*/
-        //
-        // ["when: calc: plus, %a, var: b\n" +
-        // "become: js-eval: %\"%a + %b\""]: null,
-        //
-        // ["when: calc: plus, %a, var: b\n" +
-        // "become: js-eval: %\"%(a: b) + %b\""]: null,
-        //
-        // ["when: calc: plus, %a, %b\n" +
-        // "become: js-eval: %\"%a + b\""]: null,
-        //
-        // ["associations: (a: 3, b: 5)\n" +
-        // "js-eval: %\"%a + %b\""]: null,
-        //
-        // "sequence: (when: %pattern), (become: %expr)": null,
+        ['string-interpol: "hello world %my-atom!! %2nd-atom %(test: blubb %nestedVar)"']: s(
+            f(a("string-interpol"), st("hello world %my-atom!! %2nd-atom %(test: blubb %nestedVar)"))
+        ),
+
+        ['string-interpol: %"hello world %my-atom!! %2nd-atom %(test: blubb %nestedVar)"']: s(
+            f(a("string-interpol"),
+                v(f(CONCAT,
+                    st("hello world "),
+                    v(a("my-atom!!")),
+                    st(" "),
+                    v(a("2nd-atom")),
+                    st(" "),
+                    v(app_(a("test"), a("blubb"), v(a("nestedVar")))))))
+        ),
+
+        ['string-interpol: %(%"hello world %my-atom!! %2nd-atom %(test: blubb %nestedVar)")']: s(
+            f(a("string-interpol"), v(v(st("hello world %my-atom!! %2nd-atom %(test: blubb %nestedVar)"))))
+        ),
+
+        ['string-interpol: var: %"hello world %my-atom!! %2nd-atom %(test: blubb %nestedVar)"']: s(
+            f(a("string-interpol"), v(v(st("hello world %my-atom!! %2nd-atom %(test: blubb %nestedVar)"))))
+        ),
+
+        ["when: calc: plus, %a, var: b\n" +
+        "become: js-eval: %\"%a + b\""]: s(
+            f(WHEN, f(a("calc"), a("plus"), v(a("a")), v(a("b")))),
+            f(BECOME, f(a("js-eval"), v(
+                f(CONCAT,
+                    v(a("a")),
+                    st(" + b")
+                )
+            )))
+        ),
+
+        ["when: calc: plus, %a, var: b\n" +
+        "become: js-eval: %\"%a + %b\""]: s(
+            f(WHEN, f(a("calc"), a("plus"), v(a("a")), v(a("b")))),
+            f(BECOME, f(a("js-eval"),
+                v(f(CONCAT, v(a("a")), st(" + "), v(a("b"))))
+            ))
+        ),
+
+        ["when: calc: plus, %a, var: b\n" +
+        "become: js-eval: %\"%(a: b) + %b\""]: s(
+            f(WHEN, f(a("calc"), a("plus"), v(a("a")), v(a("b")))),
+            f(BECOME, f(a("js-eval"),
+                v(f(CONCAT, v(f(a("a"), a("b"))), st(" + "), v(a("b"))))
+            ))
+        ),
+
+        ["when: calc: plus, %a, %b\n" +
+        "become: js-eval: %\"%a + b\""]: s(
+            f(WHEN, f(a("calc"), a("plus"), v(a("a")), v(a("b")))),
+            f(BECOME, f(a("js-eval"),
+                v(f(CONCAT, v(a("a")), st(" + b")))
+            ))
+        ),
+
+        ["associations: (a: 3) (b: 5)\n" +
+        "js-eval: %\"%a + %b\""]: s(
+            f(ASSOCIATIONS, f(a("a"), a("3")), f(a("b"), a("5"))),
+            f(a("js-eval"),
+                v(f(CONCAT, v(a("a")), st(" + "), v(a("b")))))
+        ),
+
+        "sequence: (when: %pattern), (become: %expr)": s(s(
+            f(WHEN, v(a("pattern"))),
+            f(BECOME, v(a("expr")))
+        )),
     }
 
 

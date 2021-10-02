@@ -3,7 +3,7 @@ import {Expr, ExprToken} from "../ast";
 import {unfold} from "./base-definitions";
 import {regExpEscape} from "../../common/util";
 import {SPECIAL_CHARS_AST} from "../parsing/constants";
-import {toEscaped} from "../parsing/string";
+import {literalToEscaped} from "../parsing/string";
 
 const SPECIAL_CHAR_REG_EXP = new RegExp("[" + regExpEscape(SPECIAL_CHARS_AST) + "]", "g")
 
@@ -48,7 +48,7 @@ export function fromRandom(
     }
 
     function genStr(src: Random): { s: string } {
-        return {s: toEscaped(src.string(src.range(MAX_STRING_LENGTH)))}
+        return {s: literalToEscaped(src.string(src.range(MAX_STRING_LENGTH)))}
     }
 
     const cumWeights = computeCumulateSumsSampling(weights)

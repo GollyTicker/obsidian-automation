@@ -71,6 +71,7 @@ export const SEQUENCE = atom("sequence")
 export const WHEN = atom("when")
 export const BECOME = atom("become")
 export const MATCHING = atom("matching")
+export const ASSOCIATIONS = atom("associations");
 
 export const CONCAT = atom("concat")
 

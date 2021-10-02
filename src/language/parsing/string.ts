@@ -40,10 +40,10 @@ function applyReplacements(rules: [string, string][], str: string): string {
     return buf
 }
 
-export function toEscaped(literal: string): string {
+export function literalToEscaped(literal: string): string {
     return applyReplacements(BOTLANG_STRING_ESCAPE_RULES, literal)
 }
 
-export function toLiteral(escaped: string): string {
+export function escapedToLiteral(escaped: string): string {
     return applyReplacements(BOTLANG_STRING_ESCAPE_RULES.map(([a, b]) => [b, a]), escaped)
 }

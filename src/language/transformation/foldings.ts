@@ -1,6 +1,6 @@
 import {Expr} from "../ast";
 import {fold} from "./base-definitions";
-import {toEscaped} from "../parsing/string";
+import {literalToEscaped} from "../parsing/string";
 
 export function asIndentedString(
     expr: Expr,
@@ -11,7 +11,7 @@ export function asIndentedString(
     const indentAfterFirstNewline = (str: string) => str.replace(/\n/g, "\n" + spaces)
     return fold(
         (s) => fullForm ? "Atom(" + s + ")" : "(" + s + ")",
-        (x) => `Str("${toEscaped(x)}")`,
+        (x) => `Str("${literalToEscaped(x)}")`,
         (data) => fullForm ? "Data(" + dataStr(data) + ")" : "#(" + dataStr(data) + ")",
         (head, tail) => {
             const indented = "h  " + indentAfterFirstNewline(head) + "\nt  " + indentAfterFirstNewline(tail.join("\n"))
@@ -29,7 +29,7 @@ export function asCodeString(
 ): string {
     return fold(
         (s) => s,
-        (x) => `"${toEscaped(x)}"`,
+        (x) => `"${literalToEscaped(x)}"`,
         dataStr,
         (head, tail) =>
             "(" + head + "): " + tail.map(x => "(" + x + ")").join(","),

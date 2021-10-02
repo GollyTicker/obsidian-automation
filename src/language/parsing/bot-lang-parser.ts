@@ -1,5 +1,5 @@
-import * as P from "parsimmon";
-import {app, Atom, atom, BotAst, Expr, exprEquals, seq, str, Str, VAR} from "../ast";
+import P from "parsimmon";
+import {app, Atom, atom, BotAst, CONCAT, Expr, exprEquals, mkVar, seq, Str, str, VAR} from "../ast";
 import {spacesParser, WhiteSpaceType} from "./whitespace";
 import {regExpEscape, toPromise} from "../../common/util";
 import {BRACKET_CLOSE, BRACKET_OPEN, COLON, COMMA, DOUBLE_QUOTE, PERCENT, SPECIAL_CHARS_AST} from "./constants";
@@ -7,22 +7,25 @@ import {
     altB,
     BotParser,
     chainB,
+    currentState,
     lazyChainB,
     mapB,
     mapStB,
     onSt,
     optionalOrElse,
-    regexp,
+    regexpB,
     result,
-    runWith,
+    runWithB,
+    skipB,
     St,
+    stringB,
     surroundB,
-    thenB,
-    withResultB
+    thenB
 } from "./bot-parser";
 import {withLogs} from "./debug";
 import {__} from "../../utils";
-import {BOTLANG_STRING_ESCAPE_RULES, toLiteral} from "./string";
+import {BOTLANG_STRING_ESCAPE_RULES, escapedToLiteral} from "./string";
+import {fold} from "../transformation/base-definitions";
 
 export async function parseBotCode(code: string): Promise<BotAst> {
     return toPromise(BotLang.definition.parse(code), code)
@@ -39,30 +42,32 @@ export async function parseBotCode(code: string): Promise<BotAst> {
 
 // ================ basic definitions ====================
 
-const comma = prefixOptSpacesB(regexp(new RegExp(regExpEscape(COMMA))))
+const comma = prefixOptSpacesB(regexpB(new RegExp(regExpEscape(COMMA))))
 
+// IMPORTANT!! This method must be used to parse a percent to ensure, that
+// the interpolation regime is recorded properly
 const percent = prefixOptSpacesB(__(
-    regexp(new RegExp(PERCENT)),
+    regexpB(new RegExp(PERCENT)),
     mapStB,
     encounteredVarPercent
 ))
 
 const varAwareColon = (hd: Expr) => prefixOptSpacesB(__(
-    regexp(new RegExp(regExpEscape(COLON))),
+    regexpB(new RegExp(regExpEscape(COLON))),
     mapStB,
     (st: St) => __(hd, exprEquals, VAR) ? encounteredVarPercent(st) : st
 ))
 
-const doubleQuote = regexp(new RegExp(regExpEscape(DOUBLE_QUOTE)))
+const doubleQuote = regexpB(new RegExp(regExpEscape(DOUBLE_QUOTE)))
 
 const bracketOpen = prefixOptSpacesB(__(
-    regexp(new RegExp(regExpEscape(BRACKET_OPEN))),
+    regexpB(new RegExp(regExpEscape(BRACKET_OPEN))),
     mapStB,
     bracketDepthModifier(1)
 ))
 
 const bracketClose = prefixOptSpacesB(__(
-    regexp(new RegExp(regExpEscape(BRACKET_CLOSE))),
+    regexpB(new RegExp(regExpEscape(BRACKET_CLOSE))),
     mapStB,
     bracketDepthModifier(-1)
 ))
@@ -80,8 +85,12 @@ const ATOM_BREAKER_REG_EXP_PART = regExpEscape(SPECIAL_CHARS_AST) + "\\s"
 const ATOM = new RegExp("[^" + ATOM_BREAKER_REG_EXP_PART + "]+")
 
 const atomBL: BotParser<Atom> = withLogs<Atom>("atom")(prefixOptSpacesB(
-    __(regexp(ATOM), mapB, atom)
+    __(regexpB(ATOM), mapB, atom)
 ))
+
+function parsedStringToStr(s: string): Str {
+    return str(escapedToLiteral(s))
+}
 
 const STRING_BREAKER = regExpEscape(DOUBLE_QUOTE)
 const STRING_ESCAPES = BOTLANG_STRING_ESCAPE_RULES.map((x) => regExpEscape(x[1]))
@@ -91,15 +100,48 @@ const STRING = new RegExp(
     "(" + STRING_ESCAPES.join("|") + "|[^" + STRING_BREAKER + "])*"
 )
 
-// todo. we need interpolation regimes, so that we can properly parse a % string as either
-// var or as a normal string.
+const INTERPOL_STRING_PART_BREAKER = regExpEscape(DOUBLE_QUOTE + PERCENT)
+const INTERPOL_STRING_PART = new RegExp(
+    "(" + STRING_ESCAPES.join("|") + "|[^" + INTERPOL_STRING_PART_BREAKER + "])*"
+)
 
-// todo. write interpolating variant of string
-const stringBL: BotParser<Str> = prefixOptSpacesB(__(
-    surroundB(doubleQuote, regexp(STRING), doubleQuote),
+function removeEmptyStrings(e: Expr[]): Expr[] {
+    return e.filter((e) =>
+        fold(() => true, (str) => str.length !== 0, () => true, () => true, e)
+    )
+}
+
+// todo. add interpolated strings to folding and unfolding
+// todo. add interpolated expressions to folding and unfolding
+const interpolatingString: BotParser<Expr> = __(
+    sequenceWithCombiner<Expr, Expr>(
+        __(regexpB(INTERPOL_STRING_PART), mapB, parsedStringToStr),
+        [{
+            postHeadSep: () => exprDepthIncreaserB(altB(
+                surroundB(__(percent, skipB, stringB(BRACKET_OPEN)), exprBL(), stringB(BRACKET_CLOSE)),
+                __(percent, thenB, atomBL))),
+            combiner: (x, interPolExpr, xs) => [x, mkVar(interPolExpr)].concat(xs)
+        }]
+    ),
     mapB,
-    (x: string) => str(toLiteral(x))
-))
+    (elements: Expr[]) => app(CONCAT, removeEmptyStrings(elements))
+)
+
+// We are only in an interpolating regime on odd number of vars.
+// See parser test cases.
+function isInterpolating(st: St): boolean {
+    return st.interpolationRegimes.length % 2 == 1
+}
+
+const stringBL: BotParser<Expr> = prefixOptSpacesB(
+    surroundB(
+        doubleQuote,
+        __(currentState, chainB, (st: St) =>
+            isInterpolating(st) ?
+                interpolatingString :
+                __(regexpB(STRING), mapB, parsedStringToStr)),
+        doubleQuote),
+)
 
 // ( (exprBL) | atomBL | "str" | %exprBL ) (: argListBL)?
 function exprBL(): BotParser<Expr> {
@@ -138,8 +180,8 @@ const argListBL: () => BotParser<Expr[]> = () => withLogs<Expr[]>("argList")(
     sequenceWithCombiner(
         exprBL(),
         [
-            {postHeadSep: varAwareColon, combiner: (x: Expr, xs: Expr[]) => [app(x, xs)]},
-            {postHeadSep: () => argListSeparator, combiner: (x: Expr, xs: Expr[]) => [x].concat(xs)}
+            {postHeadSep: varAwareColon, combiner: (x: Expr, _, xs: Expr[]) => [app(x, xs)]},
+            {postHeadSep: () => argListSeparator, combiner: (x: Expr, _, xs: Expr[]) => [x].concat(xs)}
         ] // sequenceWithCombiner can be used to simulate right-associative parsing
     )
 )
@@ -157,7 +199,7 @@ export const BotLang = P.createLanguage<{ definition: BotAst }>({
         const expressionSequenceParser = sequenceWithCombiner(exprBL(),
             [{
                 postHeadSep: () => spacesParser("mandatory", () => "w/newline"),
-                combiner: (x, xs) => [x].concat(xs)
+                combiner: (x, _, xs) => [x].concat(xs)
             }]
         )
 
@@ -167,7 +209,7 @@ export const BotLang = P.createLanguage<{ definition: BotAst }>({
             spacesParser("optional", () => "w/newline")
         )
 
-        return __(trimmedExpressionSequence, runWith, initialState).map(result)
+        return __(trimmedExpressionSequence, runWithB, initialState).map(result)
     }
 })
 
@@ -192,6 +234,7 @@ function exprDepthModifier(i: number): (st: St) => St {
     )
 }
 
+// IMPORANT!! This function must e used whenever a new depth is entered. e.g. brackets, exprs, vars, ...
 function exprDepthIncreaserB<T>(parser: BotParser<T>): BotParser<T> {
     return surroundB(
         onSt(exprDepthModifier(1)),
@@ -204,17 +247,17 @@ function prefixOptSpacesB<T>(parser: BotParser<T>): BotParser<T> {
     return __(spacesParser('optional', whiteSpaceType), thenB, parser)
 }
 
-type Combiner<A> = (head: A, tail: A[]) => A[]
+type Combiner<A, S> = (head: A, sep: S, tail: A[]) => A[]
 
 /**
  * todo.
  */
-function sequenceWithCombiner<A>(elt: BotParser<A>, sepAndCombiner: { postHeadSep: (h: A) => BotParser<any>, combiner: Combiner<A> }[]): BotParser<A[]> {
+function sequenceWithCombiner<A, S>(elt: BotParser<A>, sepAndCombiner: { postHeadSep: (h: A) => BotParser<S>, combiner: Combiner<A, S> }[]): BotParser<A[]> {
 
-    const indexed: { sepi: (h: A) => BotParser<number>, combiner: Combiner<A> }[] =
+    const indexed: { sepi: (h: A) => BotParser<[S, number]>, combiner: Combiner<A, S> }[] =
         sepAndCombiner.map((obj, i) =>
             ({
-                sepi: (h) => withResultB(obj.postHeadSep(h), i),
+                sepi: (h) => __(obj.postHeadSep(h), mapB, (res: S) => <[S, number]>[res, i]),
                 combiner: obj.combiner
             })
         )
@@ -222,10 +265,10 @@ function sequenceWithCombiner<A>(elt: BotParser<A>, sepAndCombiner: { postHeadSe
     const anySepParser = (head: A) => altB(...indexed.map(o => o.sepi(head)))
 
     function parseSepAndTailAndCombine(head: A, recursiveTailParser: () => BotParser<A[]>): BotParser<A[]> {
-        return __(anySepParser(head), chainB, (i: number) => __(
+        return __(anySepParser(head), chainB, ([sep, i]: [S, number]) => __(
             recursiveTailParser(),
             mapB,
-            (tail: A[]) => indexed[i].combiner(head, tail)
+            (tail: A[]) => indexed[i].combiner(head, sep, tail)
         ))
     }
 

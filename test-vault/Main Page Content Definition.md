@@ -1,11 +1,11 @@
 ```oa
 when: mpc-begin:
-bcomes: text: "<!-- oa! mpc-begin -->"
+become: text: "<!-- oa! mpc-begin -->"
 ```
 
 ```oa
 when: mpc-end:
-bcomes: text: "<!-- oa! mpc-end -->"
+become: text: "<!-- oa! mpc-end -->"
 ```
 
 ```oa
@@ -32,17 +32,22 @@ become: (text-concat:
 )
 ```
 
+```oa
+when: backticks: 
+become: concat: "`" "``"
+```
+
 * My intention is to define a structure which one can detect and work on top of. The `find:` is intended to be an action
   which is done to look for such matches.
 * This when-pattern should work without an explicit existing `find: ...`
 * This kind of pattern matching lends itself very much to the power
   of [PROLOG (Production Prolog Video)](https://www.youtube.com/watch?v=G_eYTctGZw8).
 
-```
+```oa
 when: mpg-def: 
-become: (text-raw-with: =
-=```dataview
-list from FolderA
-```=
+become: text: (concat:
+(backticks: )
+"dataview\nlist from FolderA\n"
+(backticks: )
 )
 ```
