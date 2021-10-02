@@ -1,5 +1,5 @@
 import {Expr} from "../ast";
-import {fold} from "./base-definitions";
+import {fold, foldB} from "./base-definitions";
 import {literalToEscaped} from "../parsing/string";
 
 export function asIndentedString(
@@ -27,12 +27,14 @@ export function asCodeString(
     expr: Expr,
     dataStr: (x: any) => string = (x) => x.toString()
 ): string {
-    return fold(
+    return foldB(
         (s) => s,
         (x) => `"${literalToEscaped(x)}"`,
         dataStr,
         (head, tail) =>
             "(" + head + "): " + tail.map(x => "(" + x + ")").join(","),
+        sub => `%(${sub})`,
+        exprs => `(sequence:\n${exprs.join("\n")})`,
         expr
     )
 }

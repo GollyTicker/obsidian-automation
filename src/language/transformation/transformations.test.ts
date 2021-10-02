@@ -1,22 +1,25 @@
-import {app, atom, BotAst, exprEquals, seq_} from "../ast";
+import {app, atom, BECOME, BotAst, exprEquals, seq_, VAR} from "../ast";
 import {assert, test} from "../../tester/tester";
 import {random} from "../../common/random";
-import {fold} from "./base-definitions";
 import {asCodeString, asIndentedString} from "./foldings";
 import {fromRandom} from "./unfoldings";
 import {parseBotCode} from "../parsing/bot-lang-parser";
 import {simpleResultOutput} from "../parsing/debug";
-import {a, f, st} from "../shortform";
+import {a, f, s, st, v} from "../shortform";
 import {debugConfig} from "../../debug";
 
 export const add = 0;
 
 if (debugConfig.loadTests) {
 
-    test("fold works", async () => {
-        const ast = atom("sdfsd")
-        const left = fold<number>(x => x.length, () => 2, () => 1, () => 0, ast)
-        assert(left === 5, left, 5)
+    test("code string works for var and sequence", async () => {
+        const ast = s(v(f(VAR, a("bla"))), f(BECOME, v(a("blubb"))))
+        const expectedStr = "(sequence:\n" +
+            "%(%(bla))\n" +
+            "(become): (%(blubb))" +
+            ")"
+        const actual = asCodeString(ast)
+        assert(expectedStr === actual, expectedStr, actual)
     })
 
     const asts = [

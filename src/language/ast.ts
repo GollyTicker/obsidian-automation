@@ -1,9 +1,10 @@
 import _ from "lodash";
-import {__} from "../utils";
 
 export type BotAst = Expr
 
 export type ExprToken = 'Atom' | 'Str' | 'Data' | 'App'
+
+export type SpecialSyntaxToken = "Var" | "Sequence"
 
 export abstract class Expr {
 
@@ -22,9 +23,13 @@ export class Atom extends Expr {
         super()
     }
 
-    public specialSyntaxAtom(): boolean {
-        return __(this, exprEquals, VAR) ||
-            __(this, exprEquals, SEQUENCE)
+    public specialSyntaxMark(): SpecialSyntaxToken | undefined {
+        if (this.name === VAR.name) {
+            return "Var"
+        } else if (this.name === SEQUENCE.name) {
+            return "Sequence"
+        }
+        return
     }
 }
 
