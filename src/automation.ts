@@ -1,10 +1,11 @@
 import {App} from "obsidian";
 import MyPlugin from "./main";
 import {extractAutomationCodeFragments, START_AUTOMATION_CODE_PREFIX} from "./code-fragment-extraction";
-import {BotDefinition, ReadFile} from "./entities";
+import {BotDefinition, InMemBot, ReadFile} from "./entities";
 import {asIndentedString} from "./language/transformation/foldings";
 import {debugConfig} from "./debug";
 import {parseBotCode} from "./language/parsing/bot-lang-parser";
+import {evaluateBotCode} from "./language/evaluation/evaluate";
 
 // @ts-ignore - Global var defs
 window.__obsidianAutomation = {
@@ -31,14 +32,17 @@ export async function testAutomation(plugin: MyPlugin) {
 
     const botDefinitions = await extractBotDefinitions(app)
 
-    const parsedExpressions = botDefinitions.map(botDef =>
+    const parsedExpressions: Promise<InMemBot>[] = botDefinitions.map(botDef =>
         parseBotCode(botDef.code).then(ast => ({...botDef, ast: ast}))
     )
 
-    parsedExpressions.forEach(pro => pro
-        .then(bot => console.log("Parsed OK - " + bot.fl.name + "\n" + asIndentedString(bot.ast, true)))
-        .catch(err => console.log("Parsed FAIL: ", err))
-    )
+    // parsedExpressions.forEach(pro => pro
+    //     .then(bot => console.log("Parsed OK - " + bot.fl.name + "\n" + asIndentedString(bot.ast, true)))
+    //     .catch(err => console.log("Parsed FAIL: ", err))
+    // )
+    console.log(`Parsed ${parsedExpressions.length} bots.`)
+
+    parsedExpressions.map(value => value.then(evaluateBotCode))
 }
 
 async function extractBotDefinitions(app: App): Promise<BotDefinition[]> {
