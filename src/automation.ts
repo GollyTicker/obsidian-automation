@@ -5,7 +5,7 @@ import {BotDefinition, InMemBot, ReadFile} from "./entities";
 import {asIndentedString} from "./language/transformation/foldings";
 import {debugConfig} from "./debug";
 import {parseBotCode} from "./language/parsing/bot-lang-parser";
-import {evaluateBotCode} from "./language/evaluation/evaluate";
+import {activateBot, resetBots} from "./language/evaluation/evaluate";
 
 // @ts-ignore - Global var defs
 window.__obsidianAutomation = {
@@ -42,7 +42,8 @@ export async function testAutomation(plugin: MyPlugin) {
     // )
     console.log(`Parsed ${parsedExpressions.length} bots.`)
 
-    parsedExpressions.map(value => value.then(evaluateBotCode))
+    resetBots()
+    parsedExpressions.map(value => value.then(activateBot))
 }
 
 async function extractBotDefinitions(app: App): Promise<BotDefinition[]> {
