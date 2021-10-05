@@ -4,6 +4,7 @@ import {findAndInitiateBotsSequentially} from './automation';
 import {runAll} from "./tester/tester";
 import {add} from "./language/transformation/transformations.test";
 import {add as add2} from "./language/parsing/bot-lang-parser.test";
+import {add as add3} from "./language/evaluation/pattern-matching.test";
 import {debugConfig} from "./debug";
 
 interface MyPluginSettings {
@@ -19,6 +20,8 @@ async function runTests() {
     add;
     // @ts-ignore
     add2;
+    // @ts-ignore
+    add3;
     await runAll()
 }
 

@@ -1,5 +1,5 @@
 import {InMemBot} from "../../entities";
-import {Associations, astMatch, WHEN_BECOME_PATTERN} from "./pattern-matching";
+import {MatchRes, patternMatch, WHEN_BECOME_PATTERN} from "./pattern-matching";
 
 
 class ActiveBots {
@@ -14,7 +14,7 @@ class ActiveBots {
         console.log(`Starting to evaluate bot: ${bot.fl.basename} on ${target.fl.basename}. Def: ${bot.code.substr(0, 10)}...`)
 
         return Promise.resolve().then(() => {
-            const patternDef: Associations | undefined = astMatch(WHEN_BECOME_PATTERN, bot.ast)
+            const patternDef: MatchRes = patternMatch(WHEN_BECOME_PATTERN, bot.ast)
 
             console.log("Pattern: " + patternDef)
 

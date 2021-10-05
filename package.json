@@ -20,6 +20,7 @@
     "@types/node": "^14.17.17",
     "@types/parsimmon": "^1.10.6",
     "@types/random-seed": "^0.3.3",
+    "immutable": "^4.0.0-rc.15",
     "lodash": "^4.17.21",
     "obsidian": "^0.12.0",
     "parsimmon": "^1.18.0",
@@ -27,6 +28,5 @@
     "rollup": "^2.32.1",
     "tslib": "^2.2.0",
     "typescript": "^4.4.3"
-  },
-  "dependencies": {}
+  }
 }
