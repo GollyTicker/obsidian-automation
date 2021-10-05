@@ -2,33 +2,28 @@ import {App, app_, Atom, atom, BECOME, Expr, exprEquals, mkVar, seq, WHEN} from 
 import {cases} from "../transformation/base-definitions";
 import {__} from "../../utils";
 import {Map as IMap} from "immutable";
+import {debugConfig} from "../../debug";
 
 export const WHEN_BECOME_PATTERN = seq([
     app_(WHEN, mkVar(atom("pattern"))),
     app_(BECOME, mkVar(atom("target")))
 ])
 
-export type Associations = IMap<Atom, Expr>
+export type Associations = IMap<string, Expr>
 export type MatchRes = Associations | undefined
 
-type St = { interpolating: boolean, ctx: Associations }
+type St = { interpolating: boolean, assocs: Associations }
 type Matcher = (st: St) => MatchRes
 
-const emptyAssoc = IMap<Atom, Expr>()
+export const emptyAssoc = IMap<string, Expr>()
 
 const neverMatcher: Matcher = () => undefined
-const unitMatcher: Matcher = (st) => st.ctx
+const unitMatcher: Matcher = (st) => st.assocs
 
 function andAlso(first: Matcher, second: Matcher): Matcher {
-    /*
-    * 1. match first.
-    * 2. match second.
-    *    second fails => undefined
-    *    second succeeds => combine both contexts */
     return (st) => {
         const match1 = first(st)
-        console.log("First: (" + JSON.stringify(st) + ") " + matchToString(match1))
-        return match1 === undefined ? undefined : second({...st, ctx: match1})
+        return match1 === undefined ? undefined : second({...st, assocs: match1})
     }
 }
 
@@ -58,7 +53,7 @@ export function patternMatch(pattern: Expr, target: Expr): MatchRes {
     function recUnify(pattern: Expr, target: Expr): Matcher {
         return st => {
 
-            console.log(`Matching (${JSON.stringify(st)}) ${pattern} =? ${target}`)
+            debugConfig.evaluation.patternMatcher && console.log(`Matching (${JSON.stringify(st)}) ${pattern} =? ${target}`)
 
             const matcher: Matcher = cases(pattern,
                 at => st.interpolating ? singletonMatcher(at, target) : equalsMatcher(at, target),
@@ -81,24 +76,24 @@ export function patternMatch(pattern: Expr, target: Expr): MatchRes {
             ) // note. seq handled implicitly via App
 
             const res = matcher(st)
-            console.log(`Matched (${JSON.stringify(st)}) [ ${pattern} =? ${target} ] ==>> ${matchToString(res)}`)
+            debugConfig.evaluation.patternMatcher && console.log(`Matched (${JSON.stringify(st)}) [ ${pattern} =? ${target} ] ==>> ${matchToString(res)}`)
             return res
         }
     }
 
-    return recUnify(pattern, target)({interpolating: false, ctx: emptyAssoc})
+    return recUnify(pattern, target)({interpolating: false, assocs: emptyAssoc})
 }
 
 const toogleInterpolation = (st: St) => ({...st, interpolating: !st.interpolating})
 
 function singletonMatcher(atom: Atom, expr: Expr): Matcher {
     return st => {
-        const previousMatch = st.ctx.get(atom)
+        const previousMatch = st.assocs.get(atom.name)
         if (previousMatch) {
             // when an atom is already matched, then we check, if both matches are consistent.
             return equalsMatcher(previousMatch, expr)(st)
         } else {
-            return st.ctx.set(atom, expr)
+            return st.assocs.set(atom.name, expr)
         }
     }
 }

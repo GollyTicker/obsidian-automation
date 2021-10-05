@@ -6,7 +6,13 @@ export type ExprToken = 'Atom' | 'Str' | 'Data' | 'App'
 
 export type SpecialSyntaxToken = "Var" | "Sequence"
 
-export abstract class Expr {
+export interface Expr {
+    type: ExprToken
+
+    toString(): string
+}
+
+export abstract class ExprBase {
 
     abstract type: ExprToken
 
@@ -16,7 +22,7 @@ export abstract class Expr {
     }
 }
 
-export class Atom extends Expr {
+export class Atom extends ExprBase {
     type: 'Atom' = 'Atom'
 
     constructor(public readonly name: string) {
@@ -33,7 +39,7 @@ export class Atom extends Expr {
     }
 }
 
-export class Str extends Expr {
+export class Str extends ExprBase {
     type: 'Str' = 'Str'
 
     constructor(public readonly str: string) {
@@ -43,7 +49,7 @@ export class Str extends Expr {
 
 // generic container for any data in memory without any direct way
 // to express it as a string
-export class Data extends Expr {
+export class Data extends ExprBase {
     type: 'Data' = 'Data'
 
     constructor(public readonly data: any) {
@@ -52,7 +58,7 @@ export class Data extends Expr {
 }
 
 // todo. hm.... if we simplify head and tail to a list... then we get LISP!
-export class App extends Expr {
+export class App extends ExprBase {
     type: 'App' = 'App'
 
     // its recommended to use atoms as heads to decrease mental burden

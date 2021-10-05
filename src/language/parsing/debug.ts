@@ -2,12 +2,12 @@ import {debugConfig} from "../../debug";
 import * as P from "parsimmon";
 import {Mark, Parser} from "parsimmon";
 import {BotParser, St} from "./bot-parser";
-import {BotAst, Expr} from "../ast";
+import {BotAst, ExprBase} from "../ast";
 import {asIndentedString} from "../transformation/foldings";
 
 export function debugLog<T>(str: string): (m: Mark<[T, St]>) => Parser<[T, St]> {
     return (m: Mark<[T, St]>) => {
-        const valueStr = m.value[0] instanceof Expr ? asIndentedString(m.value[0], true) : m.value[0]
+        const valueStr = m.value[0] instanceof ExprBase ? asIndentedString(m.value[0], true) : m.value[0]
         console.log(`${str}, (${m.start.offset}, ${m.end.offset - 1}) => ${valueStr}`);
         return P.succeed(m.value)
     };

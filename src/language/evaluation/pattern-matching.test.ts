@@ -1,7 +1,7 @@
 import {assert, test} from "../../tester/tester";
 import {a, f, v} from "../shortform";
-import {matchEquality, MatchRes, matchToString, patternMatch} from "./pattern-matching";
-import {Atom, Expr} from "../ast";
+import {emptyAssoc, matchEquality, MatchRes, matchToString, patternMatch} from "./pattern-matching";
+import {Expr} from "../ast";
 import {Map as IMap} from "immutable";
 
 export const add = 0
@@ -11,13 +11,13 @@ test("matcher works correctly", async () => {
         [
             f(a("hello"), a("blubb")),
             f(a("hello"), a("blubb")),
-            IMap<Atom, Expr>()
+            emptyAssoc
         ],
 
         [
             f(v(a("bla")), a("blubb")),
             f(a("hello"), a("blubb")),
-            IMap<Atom, Expr>([[a("bla"), a("hello")]])
+            IMap([["bla", a("hello")]])
         ],
 
         [
@@ -28,6 +28,24 @@ test("matcher works correctly", async () => {
 
         [
             f(v(v(a("bla"))), a("blubb")),
+            f(a("hello"), a("blubb")),
+            undefined
+        ],
+
+        [
+            f(v(v(v(a("bla")))), a("blubb")),
+            f(a("hello"), a("blubb")),
+            IMap([["bla", a("hello")]])
+        ],
+
+        [
+            f(v(a("bla")), v(a("bla"))),
+            f(a("hello"), a("hello")),
+            IMap([["bla", a("hello")]])
+        ],
+
+        [
+            f(v(a("bla")), v(a("bla"))),
             f(a("hello"), a("blubb")),
             undefined
         ]

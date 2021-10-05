@@ -1,5 +1,6 @@
 import {InMemBot} from "../../entities";
 import {MatchRes, patternMatch, WHEN_BECOME_PATTERN} from "./pattern-matching";
+import {Expr, WHEN} from "../ast";
 
 
 class ActiveBots {
@@ -18,7 +19,18 @@ class ActiveBots {
 
             console.log("Pattern: " + patternDef)
 
-            // todo. match this pattern in the targetBot and apply it
+            if (patternDef === undefined) {
+                return Promise.resolve()
+            }
+
+            const when = <Expr>patternDef.get(WHEN.name)
+            // const become = <Expr>patternDef.get(BECOME.name)
+
+            // todo. repeat match regularly, since there might be multiple matches
+            // @ts-ignore
+            const match: MatchRes = patternMatch(when, target.ast)
+            // todo. we need to adapt the when become pattern to ensure, that this second match
+            // can be replaced properly.
 
             return Promise.resolve()
         })

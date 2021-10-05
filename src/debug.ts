@@ -4,5 +4,8 @@ export const debugConfig = {
     parser: {
         logAttempts: false,
         logSuccesses: false
+    },
+    evaluation: {
+        patternMatcher: false
     }
 }
