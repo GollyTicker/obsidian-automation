@@ -23,6 +23,7 @@
     "immutable": "^4.1.0",
     "lodash": "^4.17.21",
     "obsidian": "^0.15.4",
+    "moment": "^2.29.4",
     "parsimmon": "^1.18.1",
     "random-seed": "^0.3.0",
     "rollup": "^2.76.0",
