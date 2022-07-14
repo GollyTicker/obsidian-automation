@@ -19,15 +19,7 @@
     "noFallthroughCasesInSwitch": true,
     "allowUnusedLabels": false,
     "esModuleInterop": true,
-    "lib": [
-      "dom",
-      "es5",
-      "scripthost",
-      "es2020",
-      "ESNext.String"
-    ]
+    "lib": ["dom", "es5", "scripthost", "ES2021", "ESNext.String"]
   },
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["**/*.ts"]
 }
