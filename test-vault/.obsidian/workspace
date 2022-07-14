@@ -10,7 +10,8 @@
           "type": "markdown",
           "state": {
             "file": "Parser test cases.md",
-            "mode": "source"
+            "mode": "source",
+            "source": false
           }
         }
       }
@@ -88,11 +89,11 @@
   },
   "active": "9ea40ae0d0b3093e",
   "lastOpenFiles": [
-    "Parser test cases.md",
+    "README.md",
     "Note 1.md",
+    "Parser test cases.md",
     "Main Page Content Definition.md",
     "Untitled.md",
-    "README.md",
     "debug.md",
     "FolderA/FA - Note 1.md",
     "FolderA/FA - Note 2.md",
