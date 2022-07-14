@@ -22,7 +22,7 @@
     "@types/random-seed": "^0.3.3",
     "immutable": "^4.1.0",
     "lodash": "^4.17.21",
-    "obsidian": "^0.12.0",
+    "obsidian": "^0.15.4",
     "parsimmon": "^1.18.1",
     "random-seed": "^0.3.0",
     "rollup": "^2.76.0",
